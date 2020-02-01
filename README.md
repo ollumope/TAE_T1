@@ -1,6 +1,6 @@
-#**Lineamientos para el primer trabajo - TAE**
+## Lineamientos para el primer trabajo - TAE ## 
 
-Prof. Juan David Ospina Arango
+Prof. Juan David Ospina Arango \n
 Universidad Nacional - Sede Medellín
 Técnicas de aprendizaje estadístico
 Semestre 2019-02
