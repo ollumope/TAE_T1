@@ -9,8 +9,6 @@ analizar espacialmente las agrupaciones.
 
 El insumo principal de este trabajo son los datos abiertos del portal Medata y en particular la Encuesta de Calidad de Vida Medellín Cómo vamos.
 
-
-holi
 ```{r}
 ECV <- read.csv("./dataSet/encuesta_calidad_vida.csv", header = TRUE, sep=";")
 ```
