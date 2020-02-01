@@ -1,4 +1,4 @@
-#**Lineamientos para el primer trabajo - TAE**<center>
+#**Lineamientos para el primer trabajo - TAE**
 
 Prof. Juan David Ospina Arango
 Universidad Nacional - Sede Medellín
