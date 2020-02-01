@@ -1,17 +1,26 @@
 ---
-title: "Encuesta Calidad de Vida - Medellín"
-output: html_document
-Authon: "Olga Lucía Montoya Pérez"
+title: "Agrupamientos de los barrios de Medellín"
+author: "Santiago Arboleda Quiroz, Olga Lucía Montoya Pérez, Alberto Ramirez Velasquez, Juan David Tangarife Patino"
+date: "Semestre 02-2019"
 ---
 
-Creación del DataFrame
+En este trabajo se abordará el problema de agrupar los barrios de Medellín de acuerdo a distintas dimensiones y
+analizar espacialmente las agrupaciones.
+
+El insumo principal de este trabajo son los datos abiertos del portal Medata y en particular la Encuesta de Calidad de Vida Medellín Cómo vamos.
+
+
+holi
 ```{r}
-ECV <- read.csv("~/Desktop/Especializacion/AprendizajeEstadistico/Agrupamiento/Taller 01/dataSet/encuesta_calidad_vida.csv", header = TRUE, sep=";")
+ECV <- read.csv("./dataSet/encuesta_calidad_vida.csv", header = TRUE, sep=";")
 ```
+
+1. Caracterización de las dimensiones
 
 ```{r}
 summary(ECV)
 ```
+
 ```{r}
 sum(is.na(ECV$encuesta_calidad.p_145))
 
