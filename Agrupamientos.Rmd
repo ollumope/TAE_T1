@@ -1,0 +1,19 @@
+---
+title: "Encuesta Calidad de Vida - Medellín"
+output: html_document
+Authon: "Olga Lucía Montoya Pérez"
+---
+
+Creación del DataFrame
+```{r}
+ECV <- read.csv("~/Desktop/Especializacion/AprendizajeEstadistico/Agrupamiento/Taller 01/dataSet/encuesta_calidad_vida.csv", header = TRUE, sep=";")
+```
+
+```{r}
+summary(ECV)
+```
+```{r}
+sum(is.na(ECV$encuesta_calidad.p_145))
+
+```
+
