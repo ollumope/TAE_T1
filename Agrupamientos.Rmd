@@ -13,20 +13,28 @@ El insumo principal de este trabajo son los datos abiertos del portal Medata y e
 ECV <- read.csv("./dataSet/encuesta_calidad_vida.csv", header = TRUE, sep=";")
 ```
 
-1. Caracterización de las dimensiones
+1. Caracterización de las dimensiones para la dimensión ALIMENTACION
 
 ```{r}
 summary(ECV)
 ```
 
-```{r}
-sum(is.na(ECV$encuesta_calidad.p_145))
+Para la dimensión de ALIMENTACION se toman las preguntas:
+P_291 - En este hogar: En los ultimos 30 días, ¿Usted se preocupó alguna vez de que en su hogar se acabaran los alimentos debido a falta de dinero?
+P_292 - En este hogar: En los ultimos 30 días, ¿Alguna vez en su hogar se quedaron sin dinero para obtener una P_295 - alimentación nutritiva:...?
+En este hogar: En los ultimos 30 días, ¿Alguna vez en su hogar se quedaron sin alimentos por falta de dinero?
 
+```{r}
+ECV_ALIMENTO <- data.frame(ECV$encuesta_calidad.p_1,ECV$encuesta_calidad.encuesta,ECV$encuesta_calidad.persona,ECV$encuesta_calidad.comuna,ECV$encuesta_calidad.barrio,ECV$encuesta_calidad.p_291, ECV$encuesta_calidad.p_292, ECV$encuesta_calidad.p_295)
 ```
 
+Dado que para las preguntas seleccionas en la dimension de alimentación (291,292,295), no fueron contestadas por ningunos de los encuentados del mismo hogar, se descartan esas respuestas para el analisis
+
 ```{r}
-summary(ECV$encuesta_calidad.p_292)
+ECV_ALIMENTO_DEP <- subset(ECV_ALIMENTO,ECV$encuesta_calidad.p_291 != 'NULL' & ECV$encuesta_calidad.p_292 != 'NULL' & ECV$encuesta_calidad.p_295 != 'NULL')
+nrow(ECV_ALIMENTO_DEP)
 ```
 ```{r}
-ECV_ALIMENTO <- data.frame(ECV$encuesta_calidad.p_291, ECV$encuesta_calidad.p_292, ECV$encuesta_calidad.p_295)
+summary(ECV_ALIMENTO_DEP)
 ```
+
