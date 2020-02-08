@@ -24,3 +24,9 @@ sum(is.na(ECV$encuesta_calidad.p_145))
 
 ```
 
+```{r}
+summary(ECV$encuesta_calidad.p_292)
+```
+```{r}
+ECV_ALIMENTO <- data.frame(ECV$encuesta_calidad.p_291, ECV$encuesta_calidad.p_292, ECV$encuesta_calidad.p_295)
+```
