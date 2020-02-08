@@ -66,7 +66,7 @@ Las columnas de preguntas son de tipo caracter, es necesario convertirlas a ente
 
 #ECV_ALIMENTO_DEP$p_292 = as.numeric(ECV_ALIMENTO_DEP$p_292)
 
-transform(ECV_ALIMENTO_DEP, p_295 = as.numeric(p_295))
+#transform(ECV_ALIMENTO_DEP, p_295 = as.numeric(p_295))
 
 ```
 
@@ -88,5 +88,9 @@ aguasfrias
 ```{r}
 suma <- count(aguasfrias,p_291)
 suma
+```
+```{r}
+library('sqldf')
+sqldf("select barrio, count(p_291) from ECV_ALIMENTO_DEP  WHERE p_291 = '1' group by barrio")
 ```
 
