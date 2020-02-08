@@ -59,26 +59,34 @@ Definiciones:
 
 Cuando las preguntas hacen referencia a nivel de hogar, tomaremos la moda como referencia, es decir, el valor más representativo en las respuestas obtenidas en ese hogar. La proporción se hará sobre el total de los encuestados.
 
+
+Las columnas de preguntas son de tipo caracter, es necesario convertirlas a enteros
 ```{r}
-#df[c('p_291','p_292','p_295')] <- lapply(df[c('p_291','p_292','p_295')], as.integer)
+#ECV_ALIMENTO_DEP[c('p_291','p_292','p_295')] <- lapply(ECV_ALIMENTO_DEP[c('p_291','p_292','p_295')], as.integer)
+
+#ECV_ALIMENTO_DEP$p_292 = as.numeric(ECV_ALIMENTO_DEP$p_292)
+
+transform(ECV_ALIMENTO_DEP, p_295 = as.numeric(p_295))
+
 ```
 
 
+Se realiza el agrupamiento por barrio
 
 ```{r}
 library(dplyr)
-grp <- group_by(ECV_ALIMENTO_DEP,barrio,sum())
-grp
-
-```
-
-```{r}
+true_291 <- aggregate(ECV_ALIMENTO_DEP["p_291"], by=ECV_ALIMENTO_DEP["barrio"], FUN=sum)
+true_291
 
 ```
 
 
 ```{r}
-grp1 <- aggregate(ECV_ALIMENTO_DEP["p_291"], by=ECV_ALIMENTO_DEP["barrio"], FUN=sum)
-grp1
+aguasfrias <- subset(ECV_ALIMENTO_DEP,barrio == 'AGUAS FRÍAS')
+aguasfrias
+```
+```{r}
+suma <- count(aguasfrias,p_291)
+suma
 ```
 
