@@ -28,6 +28,23 @@ En este hogar: En los ultimos 30 días, ¿Alguna vez en su hogar se quedaron sin
 ECV_ALIMENTO <- data.frame(ECV$encuesta_calidad.p_1,ECV$encuesta_calidad.encuesta,ECV$encuesta_calidad.persona,ECV$encuesta_calidad.comuna,ECV$encuesta_calidad.barrio,ECV$encuesta_calidad.p_291, ECV$encuesta_calidad.p_292, ECV$encuesta_calidad.p_295)
 ```
 
+```{r}
+
+names(ECV_ALIMENTO)[1] <- 'reemplazo'
+names(ECV_ALIMENTO)[2] <- 'encuesta'
+names(ECV_ALIMENTO)[3] <- 'persona'
+names(ECV_ALIMENTO)[4] <- 'comuna'
+names(ECV_ALIMENTO)[5] <- 'barrio'
+names(ECV_ALIMENTO)[6] <- 'p_291'
+names(ECV_ALIMENTO)[7] <- 'p_292'
+names(ECV_ALIMENTO)[8] <- 'p_295'
+```
+
+Revisemos como es el comportamiento de los datos seleccionados
+```{r}
+summary(ECV_ALIMENTO)
+```
+
 Dado que para las preguntas seleccionas en la dimension de alimentación (291,292,295), no fueron contestadas por ningunos de los encuentados del mismo hogar, se descartan esas respuestas para el analisis
 
 ```{r}
@@ -36,5 +53,32 @@ nrow(ECV_ALIMENTO_DEP)
 ```
 ```{r}
 summary(ECV_ALIMENTO_DEP)
+```
+
+Definiciones:
+
+Cuando las preguntas hacen referencia a nivel de hogar, tomaremos la moda como referencia, es decir, el valor más representativo en las respuestas obtenidas en ese hogar. La proporción se hará sobre el total de los encuestados.
+
+```{r}
+#df[c('p_291','p_292','p_295')] <- lapply(df[c('p_291','p_292','p_295')], as.integer)
+```
+
+
+
+```{r}
+library(dplyr)
+grp <- group_by(ECV_ALIMENTO_DEP,barrio,sum())
+grp
+
+```
+
+```{r}
+
+```
+
+
+```{r}
+grp1 <- aggregate(ECV_ALIMENTO_DEP["p_291"], by=ECV_ALIMENTO_DEP["barrio"], FUN=sum)
+grp1
 ```
 
