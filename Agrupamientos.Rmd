@@ -61,7 +61,8 @@ En este hogar: En los ultimos 30 días, ¿Alguna vez en su hogar se quedaron sin
 ```{r}
 
 ECV_ALIMENTO <- ECV[,c("encuesta","persona","comuna","barrio","p_1","p_291","p_292","p_295")]
-
+ECV_BASICO <- ECV[,c("comuna","barrio","estrato")]
+ECV_BASICO <- unique(ECV_BASICO)
 
 ```
 
