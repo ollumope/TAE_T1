@@ -64,10 +64,9 @@ set_dataSet_names <- function(list_names){
 get_indicadores_ei <- function(df_data, question){
   require(dplyr)
   require(lazyeval)
-
   #separo un dataSet con la informacion importante para calcular el indicador
-  ECV_ALIMENTO_QTION <- df_data[,c("barrio","estrato", question)]
-  ECV_BASICO <- ECV[,c("comuna","barrio","estrato")]
+  ECV_ALIMENTO_QTION <- df_data[,c("comuna","barrio","estrato", question)]
+  ECV_BASICO <- ECV_ALIMENTO_QTION[,c("comuna","barrio","estrato")]
   ECV_BASICO <- unique(ECV_BASICO)
 
   #Genero un conteo del toral de respuestas por barrio y estrato
@@ -100,6 +99,12 @@ get_indicadores_ei <- function(df_data, question){
 
   ECV_ALIMENTO_QTION_KQTION <- ECV_ALIMENTO_QTION_KQTION[,c("comuna","barrio","estrato",question,"totalRespuestaE","totalEncuestadosE","TotalB","k_qtion_1","k_qtion_2")]
 
+  rm(ECV_ALIMENTO_QTION)
+  rm(ECV_BASICO)
+  rm(ECV_ALIMENTO_QTION_COUNTXR)
+  rm(ECV_ALIMENTO_QTION_CTB)
+  rm(ECV_ALIMENTO_QTION_COUNT)
+
   return(ECV_ALIMENTO_QTION_KQTION)
 }
 
@@ -114,10 +119,9 @@ get_indicadores_ei <- function(df_data, question){
 get_indicadores_ec <- function(df_data, question){
   require(dplyr)
   require(lazyeval)
-
   #separo un dataSet con la informacion importante para calcular el indicador
-  ECV_ALIMENTO_QTION <- df_data[,c("encuesta","barrio","estrato", question)]
-  ECV_BASICO <- ECV[,c("comuna","barrio","estrato")]
+  ECV_ALIMENTO_QTION <- df_data[,c("comuna","encuesta","barrio","estrato", question)]
+  ECV_BASICO <- ECV_ALIMENTO_QTION[,c("comuna","barrio","estrato")]
   ECV_BASICO <- unique(ECV_BASICO)
 
   ECV_ALIMENTO_QTION <- ECV_ALIMENTO_QTION %>% group_by(encuesta,barrio,estrato) %>%
@@ -153,6 +157,12 @@ get_indicadores_ec <- function(df_data, question){
   ECV_ALIMENTO_QTION_KQTION <- merge(x=ECV_ALIMENTO_QTION_KQTION,y=ECV_BASICO,by = c("barrio","estrato"))
 
   ECV_ALIMENTO_QTION_KQTION <- ECV_ALIMENTO_QTION_KQTION[,c("comuna","barrio","estrato",question,"totalRespuestaE","totalEncuestadosE","TotalB","k_qtion_1","k_qtion_2")]
+
+  rm(ECV_ALIMENTO_QTION)
+  rm(ECV_BASICO)
+  rm(ECV_ALIMENTO_QTION_COUNTXR)
+  rm(ECV_ALIMENTO_QTION_CTB)
+  rm(ECV_ALIMENTO_QTION_COUNT)
 
   return(ECV_ALIMENTO_QTION_KQTION)
 }
