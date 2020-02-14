@@ -1,0 +1,173 @@
+---
+title: "Agrupamientos de los barrios de Medellín"
+author: "Santiago Arboleda Quiroz, Olga Lucía Montoya Pérez, Alberto Ramirez Velasquez, Juan David Tangarife Patino"
+date: "Semestre 02-2019"
+---
+
+En este trabajo se abordará el problema de agrupar los barrios de Medellín de acuerdo a distintas dimensiones y
+analizar espacialmente las agrupaciones.
+
+
+Librerias escenciales para el analisis de informacion
+```{r}
+library(dplyr)
+library(ggplot2)
+library(Utiltae)
+library(lazyeval)
+```
+
+
+
+El insumo principal de este trabajo son los datos abiertos del portal Medata y en particular la Encuesta de Calidad de Vida Medellín Cómo vamos.
+```{r}
+ECV <- read.csv("./dataSet/encuesta_calidad_vida.csv", header = TRUE, sep=";")
+```
+
+Se procede a normalizar las cabeceras del dataframe del set de datos
+```{r}
+ECV <- setNames(ECV,set_dataSet_names(names(ECV)))
+```
+
+1. Caracterización de las dimensiones para la dimensión ALIMENTACION
+
+
+
+
+```{r}
+summary(ECV)
+```
+
+Para la dimensión de ALIMENTACION se toman las preguntas:
+P_291 - En este hogar: En los ultimos 30 días, ¿Usted se preocupó alguna vez de que en su hogar se acabaran los alimentos debido a falta de dinero?
+P_292 - En este hogar: En los ultimos 30 días, ¿Alguna vez en su hogar se quedaron sin dinero para obtener una P_295 - alimentación nutritiva:...?
+En este hogar: En los ultimos 30 días, ¿Alguna vez en su hogar se quedaron sin alimentos por falta de dinero?
+
+```{r}
+
+ECV_NUTRICION<- ECV[,c("encuesta","comuna","barrio","estrato","p_291","p_292","p_295")]
+
+```
+
+Revisemos como es el comportamiento de los datos seleccionados
+```{r}
+summary(ECV_NUTRICION)
+```
+
+Dado que para las preguntas seleccionas en la dimension de alimentación (291,292,295), no fueron contestadas por ningunos de los encuentados del mismo hogar, se descartan esas respuestas para el analisis
+
+```{r}
+ECV_NUTRICION_DEP <- subset(ECV_NUTRICION,p_291 != 'NULL' & p_292 != 'NULL' & p_295 != 'NULL')
+nrow(ECV_NUTRICION_DEP)
+```
+```{r}
+summary(ECV_NUTRICION_DEP)
+```
+
+Definiciones:
+
+################################## propuesta Juan David ###################################
+
+Dimensión Alimentación.
+P_291: En este hogar: En los ultimos 30 días, ¿Usted se preocupó alguna vez de que en su hogar se acabaran los alimentos debido a falta de dinero?
+Indicador: Porcentaje de personas que piensan que por falta dinero se acabaría los alimentos en su hogar
+Formula: 
+  Totales de personas SI / Totales Encuestados P_291
+  Totales de personas NO / Totales Encuestados P_291
+
+```{r}
+ECV_NUTRICION_P291_K291 <- get_indicadores_ei(ECV_NUTRICION_DEP,'p_291')
+```
+
+
+Grafico
+
+```{r}
+library(ggplot2)
+ggplot(subset(ECV_NUTRICION_P291_K291,comuna=="ALTAVISTA"),aes(x=estrato, y=k_qtion_1, fill=p_291)) + geom_bar( stat="identity",position = "stack")+facet_wrap( ~ barrio)+ggtitle("Personas que piensan que por falta de dinero se quedan sin comida por Estrato en Barrios Comuna")
+```
+
+Dimensión Alimentación.
+P_292: En este hogar: En los ultimos 30 días, ¿Alguna vez en su hogar se quedaron sin dinero para obtener una alimentación nutritiva:...?
+Indicador: Porcentaje de personas que no puedieron obtener una alimenatación nutritiva por falta de dinero.
+Consideración:Se detecta que en los hogares existe la posibilidad que se hubiera llenado más de una encuestas, por este motivo se determina unificar el resultado de las encuestas por medio de la moda.
+Formula: 
+  Totales de personas SI / Totales Encuestados P_292
+  Totales de personas NO / Totales Encuestados P_292
+
+1. Adecuo la informacion para la contruccion de los indicadores para P_292
+
+2. Se procede a calcular los indicadores depues de realizar el agrupamiento mediante la moda
+```{r}
+
+ECV_NUTRICION_P292_K292 <- get_indicadores_ec(ECV_NUTRICION_DEP,'p_292')
+
+```
+GRAFICO P_292
+```{r}
+library(ggplot2)
+ggplot(subset(ECV_NUTRICION_P292_K292,comuna=="ALTAVISTA"),aes(x=estrato, y=k_qtion_1, fill=p_292)) + geom_bar( stat="identity",position = "stack")+facet_wrap( ~ barrio)
+```
+
+4. dataFrame principales de indicadores.
+  ECV_NUTRICION_P291_K291
+  ECV_NUTRICION_P292_K292
+  
+
+Dimensión Alimentación.
+P_295: En este hogar: En los ultimos 30 días, ¿Alguna vez en su hogar se quedaron sin alimentos por falta de dinero?
+Indicador: Porcentaje de personas que alguna vez en su hogar se quedaron sin alimentos por falta de comida.
+Consideración:Se detecta que en los hogares existe la posibilidad que se hubiera llenado más de una encuestas, por este motivo se determina unificar el resultado de las encuestas por medio de la moda.
+Formula: 
+  Totales de personas SI / Totales Encuestados P_295
+  Totales de personas NO / Totales Encuestados P_295
+
+1. Se crea un dataSet con la informacion de la pregunta p_295
+
+2.Generación de un registro por encuesta.
+
+```{r}
+
+ECV_NUTRICION_P295_K295 <- get_indicadores_ei(ECV_NUTRICION_DEP,'p_295')
+
+```
+
+
+
+5. GRAFICO DE CORRELACION
+dataSet principales
+ECV_ALIMENTO_P291_K291
+ECV_ALIMENTO_P292_K292
+ECV_ALIMENTO_P295_K295
+```{r}
+library(ggplot2)
+ggplot(subset(ECV_NUTRICION_P295_K295,comuna=="ALTAVISTA"),aes(x=estrato, y=k_qtion_1, fill=p_295)) + geom_bar( stat="identity",position = "stack")+facet_wrap( ~ barrio)
+```
+
+
+
+################################## propuesta Juan David ###################################
+
+
+Se realiza el agrupamiento por barrio
+
+```{r}
+library(dplyr)
+true_291 <- aggregate(ECV_ALIMENTO_DEP["p_291"], by=ECV_ALIMENTO_DEP["barrio"], FUN=sum)
+true_291
+
+```
+
+
+```{r}
+aguasfrias <- subset(ECV_ALIMENTO_DEP,barrio == 'AGUAS FRÍAS')
+aguasfrias
+```
+```{r}
+suma <- count(aguasfrias,p_291)
+suma
+```
+```{r}
+library('sqldf')
+sqldf("select barrio, count(p_291) from ECV_ALIMENTO_DEP  WHERE p_291 = '1' group by barrio")
+```
+
