@@ -732,4 +732,4 @@ Depuración de columnas
 ECV_SALUD_BARRIO$total <- NULL
 ECV_SALUD_BARRIO$total_mujer <- NULL
 ```
-
+ 
