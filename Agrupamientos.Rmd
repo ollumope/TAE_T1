@@ -8,8 +8,19 @@ En este trabajo se abordará el problema de agrupar los barrios de Medellín de 
 analizar espacialmente las agrupaciones.
 
 
-funcion que me permite sacar la moda para las preguntas orientadas a hogares
+Librerias a utilizar en el desarrollo del proyecto
+```{r}
+library("factoextra")
+library(cluster)
+library(plyr)
+library(ggplot2)
+library(GGally)
+library(dplyr)
+library(magrittr)
+library('sqldf')
+```
 
+Función que me permite sacar la moda para las preguntas orientadas a hogares
 ```{r}
 getmode <- function(v) {
    uniqv <- unique(v)
@@ -104,7 +115,6 @@ Formula:
   Totales de personas NO / Totales Encuestados P_291
   
 ```{r}
-library(plyr)
 names(ECV_ALIMENTO_DEP)
 ```
 
@@ -139,7 +149,6 @@ ECV_ALIMENTO_P291_K291 <- ECV_ALIMENTO_P291_K291[,c("comuna","barrio","estrato",
 Grafico
 
 ```{r}
-library(ggplot2)
 ggplot(subset(ECV_ALIMENTO_P291_K291,comuna=="ALTAVISTA"),aes(x=estrato, y=k_291_1, fill=p_291)) + geom_bar( stat="identity",position = "stack")+facet_wrap( ~ barrio)+ggtitle("Personas que piensan que por falta de dinero se quedan sin comida por Estrato en Barrios Comuna")
 ```
 
@@ -197,7 +206,6 @@ ECV_ALIMENTO_P292_K292 <- ECV_ALIMENTO_P292_K292[,c("comuna","barrio","estrato",
 ```
 GRAFICO P_292
 ```{r}
-library(ggplot2)
 ggplot(subset(ECV_ALIMENTO_P292_K292,comuna=="ALTAVISTA"),aes(x=estrato, y=k_292_1, fill=p_292)) + geom_bar( stat="identity",position = "stack")+facet_wrap( ~ barrio)
 ```
 
@@ -226,8 +234,6 @@ if(exists('ECV_ALIMENTO_P292_CTB')) rm(ECV_ALIMENTO_P292_CTB)
 5. GRAFICO DE CORRELACION
 
 ```{r}
-library(GGally)
-
 ggpairs(sub_ECV_ALIMENTO_K2911_K2921, columns = c("k_291_2","k_292_2"), ggplot2::aes(colour=barrio)) 
 ```
 
@@ -245,8 +251,6 @@ ECV_ALIMENTO_P295 <- ECV_ALIMENTO_DEP[c("encuesta","comuna","barrio","estrato","
 ```
 2.Generación de un registro por encuesta.
 ```{r}
-library(dplyr)
-library(magrittr)
 ECV_ALIMENTO_P295_AGG <- ECV_ALIMENTO_P295 %>% group_by(encuesta,comuna,barrio,estrato) %>% summarise(p_295 = getmode(p_295)) %>% ungroup()
 
 ```
@@ -294,7 +298,6 @@ ECV_ALIMENTO_P291_K291
 ECV_ALIMENTO_P292_K292
 ECV_ALIMENTO_P295_K295
 ```{r}
-library(ggplot2)
 ggplot(subset(ECV_ALIMENTO_P295_K295,comuna=="ALTAVISTA"),aes(x=estrato, y=k_295_1, fill=p_295)) + geom_bar( stat="identity",position = "stack")+facet_wrap( ~ barrio)
 ```
 
@@ -303,7 +306,6 @@ ggplot(subset(ECV_ALIMENTO_P295_K295,comuna=="ALTAVISTA"),aes(x=estrato, y=k_295
 ################################## propuesta Juan David ###################################
 
 ```{r}
-library('sqldf')
 sqldf("select barrio, count(p_291) from ECV_ALIMENTO_DEP  WHERE p_291 = '1' group by barrio")
 ```
 
@@ -732,4 +734,80 @@ Depuración de columnas
 ECV_SALUD_BARRIO$total <- NULL
 ECV_SALUD_BARRIO$total_mujer <- NULL
 ```
- 
+
+**Estadisticas básicas VIVIENDA**
+
+```{r}
+summary(ECV_VIVIENDA_BARRIO)
+```
+
+**Agrupamientos**
+
+- Imputación de los valores Nulos - 
+
+Para efectos de la ejecución de los modelos, los valores del data frame ECV_VIVIENDA_BARRIO que sean nulos se llenan con 0 dado que cuando se presenta un valor NAN significa que el indicador no aplica para el barrio y el cero lo representa
+```{r}
+ECV_VIVIENDA_BARRIO[is.na(ECV_VIVIENDA_BARRIO)] <- 0
+```
+
+- Normalización de los datos - 
+
+Si bien, la mayoria de los indicadores del dataframe ECV_VIVIENDA_BARRIO se encuentran en función de hogares existe un indicador en función de personas del hogar, por lo tanto es necesario poner todos los indicadores en la misma escala
+```{r}
+#Kmeans no acepta variables categoricas, el identificador del barrio se convierte en nombre de filas para que no sean consideras por el algoritmo
+ECV_VIVIENDA_BARRIO_SCALE <- tibble::column_to_rownames(ECV_VIVIENDA_BARRIO, var = "barrio")
+
+ECV_VIVIENDA_BARRIO_SCALE <- scale(ECV_VIVIENDA_BARRIO_SCALE)
+
+#ECV_VIVIENDA_BARRIO_SCALE <- ECV_VIVIENDA_BARRIO %>% mutate_if(is.numeric,scale)
+```
+
+```{r}
+any(is.na(ECV_VIVIENDA_BARRIO_SCALE))
+any(is.finite(ECV_VIVIENDA_BARRIO_SCALE))
+```
+
+Método del codo para determinar el K óptimo
+
+```{r}
+fviz_nbclust(ECV_VIVIENDA_BARRIO_SCALE, kmeans, method = "wss") + labs(title= "Número óptimo de Clusters") + xlab("Número de Cluster (K)") 
+```
+De acuerdo a la gráfica donde se da el cambio de pendiente más significativo es en el k = 7
+
+Método de la siluetta para determinar el k óptimo
+
+```{r}
+fviz_nbclust(ECV_VIVIENDA_BARRIO_SCALE, kmeans, method = "silhouette")
+```
+De acuerdo a la gráfica donde se da el cambio de pendiente más significativo es en el k = 8
+
+
+Aplicación de Kmeans a partir del k recomendado en la gráfica anterior
+
+```{r}
+#[,2:9]
+set.seed(1988)
+kmeans_model <- kmeans(ECV_VIVIENDA_BARRIO_SCALE, 8, nstart = 50)
+kmeans_model
+```
+Agregar el cluster a la data original
+```{r}
+df_member <- cbind(ECV_VIVIENDA_BARRIO, cluster = kmeans_model$cluster)
+head(df_member)
+```
+Visualización de los grupos
+```{r}
+#palette=c("red", "blue", "black", "darkgreen")
+# fviz_cluster(kmeans_model, data = ECV_VIVIENDA_BARRIO_SCALE,
+#              ellipse.type = "euclid",
+#              star.plot = T,
+#              repel = T,
+#              ggtheme = theme())
+
+fviz_cluster(kmeans_model, data = ECV_VIVIENDA_BARRIO_SCALE)
+
+```
+```{r}
+
+```
+
