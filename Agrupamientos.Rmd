@@ -10,6 +10,7 @@ analizar espacialmente las agrupaciones.
 
 Librerias a utilizar en el desarrollo del proyecto
 ```{r}
+#library(xlsx)
 library("factoextra")
 library(cluster)
 library(plyr)
@@ -18,6 +19,7 @@ library(GGally)
 library(dplyr)
 library(magrittr)
 library('sqldf')
+
 ```
 
 Función que me permite sacar la moda para las preguntas orientadas a hogares
@@ -62,254 +64,10 @@ ECV <- setNames(ECV,l_names)
 summary(ECV)
 ```
 
-Para la dimensión de ALIMENTACION se toman las preguntas:
-P_291 - En este hogar: En los ultimos 30 días, ¿Usted se preocupó alguna vez de que en su hogar se acabaran los alimentos debido a falta de dinero?
-P_292 - En este hogar: En los ultimos 30 días, ¿Alguna vez en su hogar se quedaron sin dinero para obtener una P_295 - alimentación nutritiva:...?
-En este hogar: En los ultimos 30 días, ¿Alguna vez en su hogar se quedaron sin alimentos por falta de dinero?
-
-
-```{r}
-
-ECV_ALIMENTO <- ECV[,c("encuesta","persona","comuna","barrio","p_1","p_291","p_292","p_295")]
-ECV_BASICO <- ECV[,c("comuna","barrio","estrato")]
-ECV_BASICO <- unique(ECV_BASICO)
-
-```
-
-Revisemos como es el comportamiento de los datos seleccionados
-```{r}
-summary(ECV_ALIMENTO)
-```
-
-Dado que para las preguntas seleccionas en la dimension de alimentación (291,292,295), no fueron contestadas por ningunos de los encuentados del mismo hogar, se descartan esas respuestas para el analisis
-
-```{r}
-ECV_ALIMENTO_DEP <- subset(ECV_ALIMENTO,p_291 != 'NULL' & p_292 != 'NULL' & p_295 != 'NULL')
-nrow(ECV_ALIMENTO_DEP)
-```
-```{r}
-summary(ECV_ALIMENTO_DEP)
-```
 
 Definiciones:
 
 Cuando las preguntas hacen referencia a nivel de hogar, tomaremos la moda como referencia, es decir, el valor más representativo en las respuestas obtenidas en ese hogar. La proporción se hará sobre el total de los encuestados.
-
-
-Las columnas de preguntas son de tipo caracter, es necesario convertirlas a enteros
-```{r}
-#ECV_ALIMENTO_DEP[c('p_291','p_292','p_295')] <- lapply(ECV_ALIMENTO_DEP[c('p_291','p_292','p_295')], as.integer)
-
-#ECV_ALIMENTO_DEP$p_292 = as.numeric(ECV_ALIMENTO_DEP$p_292)
-
-#transform(ECV_ALIMENTO_DEP, p_295 = as.numeric(p_295))
-
-```
-################################## propuesta Juan David ###################################
-
-Dimensión Alimentación.
-P_291: En este hogar: En los ultimos 30 días, ¿Usted se preocupó alguna vez de que en su hogar se acabaran los alimentos debido a falta de dinero?
-Indicador: Porcentaje de personas que piensan que por falta dinero se acabaría los alimentos en su hogar
-Formula: 
-  Totales de personas SI / Totales Encuestados P_291
-  Totales de personas NO / Totales Encuestados P_291
-  
-```{r}
-names(ECV_ALIMENTO_DEP)
-```
-
-```{r}
-#separo un dataSet con la informacion importante para calcular el indicador
-ECV_ALIMENTO_P291 <- ECV_ALIMENTO_DEP[,c("barrio","estrato","p_291")]
-#Genero un conteo del toral de respuestas por barrio y estrato
-ECV_ALIMENTO_P291_COUNTXR <- aggregate(ECV_ALIMENTO_P291$p_291,by=list(ECV_ALIMENTO_P291$barrio,ECV_ALIMENTO_P291$estrato,ECV_ALIMENTO_P291$p_291),function(x){NROW(x)})
-ECV_ALIMENTO_P291_COUNTXR <- setNames(ECV_ALIMENTO_P291_COUNTXR,c("barrio",'estrato',"p_291","totalRespuestaE"))
-
-#Genero un conteo del toral de respuestas por barrio 
-ECV_ALIMENTO_P291_CTB <- aggregate(ECV_ALIMENTO_P291$p_291,by=list(ECV_ALIMENTO_P291$barrio),function(x){NROW(x)})
-ECV_ALIMENTO_P291_CTB <- setNames(ECV_ALIMENTO_P291_CTB,c("barrio","TotalB"))
-
-#Separo otro DataSet con el barrio, estrato y la cantidad de respuestas para calcular el total #encuestado
-ECV_ALIMENTO_P291_COUNT <- ECV_ALIMENTO_P291_COUNTXR[,c("barrio","estrato","totalRespuestaE")]
-ECV_ALIMENTO_P291_COUNT <- aggregate(ECV_ALIMENTO_P291_COUNTXR$totalRespuesta,by=list(ECV_ALIMENTO_P291_COUNTXR$barrio,ECV_ALIMENTO_P291_COUNTXR$estrato), FUN="sum")
-
-ECV_ALIMENTO_P291_COUNT <- setNames(ECV_ALIMENTO_P291_COUNT,c("barrio","estrato","totalEncuestadosE"))
-# se cuenta con 2 dataSet para generar el indicador k_p295
-ECV_ALIMENTO_P291_K291 <- merge(x=ECV_ALIMENTO_P291_COUNT,y=ECV_ALIMENTO_P291_COUNTXR,by=c("barrio","estrato"))
-ECV_ALIMENTO_P291_K291 <- merge(x=ECV_ALIMENTO_P291_K291,y=ECV_ALIMENTO_P291_CTB,by=c("barrio"))
-#Calculo indicadores 
-ECV_ALIMENTO_P291_K291 <- within(ECV_ALIMENTO_P291_K291,k_291_1 <- totalRespuestaE / totalEncuestadosE  )
-ECV_ALIMENTO_P291_K291 <- within(ECV_ALIMENTO_P291_K291,k_291_2 <- totalRespuestaE / TotalB  )
-
-
-ECV_ALIMENTO_P291_K291 <- merge(x=ECV_ALIMENTO_P291_K291,y=ECV_BASICO,by = c("barrio","estrato"))
-
-ECV_ALIMENTO_P291_K291 <- ECV_ALIMENTO_P291_K291[,c("comuna","barrio","estrato","p_291","totalRespuestaE","totalEncuestadosE","TotalB","k_291_1","k_291_2")]
-```
-Grafico
-
-```{r}
-ggplot(subset(ECV_ALIMENTO_P291_K291,comuna=="ALTAVISTA"),aes(x=estrato, y=k_291_1, fill=p_291)) + geom_bar( stat="identity",position = "stack")+facet_wrap( ~ barrio)+ggtitle("Personas que piensan que por falta de dinero se quedan sin comida por Estrato en Barrios Comuna")
-```
-
-Dimensión Alimentación.
-P_292: En este hogar: En los ultimos 30 días, ¿Alguna vez en su hogar se quedaron sin dinero para obtener una alimentación nutritiva:...?
-Indicador: Porcentaje de personas que no puedieron obtener una alimenatación nutritiva por falta de dinero.
-Consideración:Se detecta que en los hogares existe la posibilidad que se hubiera llenado más de una encuestas, por este motivo se determina unificar el resultado de las encuestas por medio de la moda.
-Formula: 
-  Totales de personas SI / Totales Encuestados P_292
-  Totales de personas NO / Totales Encuestados P_292
-
-1. Adecuo la informacion para la contruccion de los indicadores para P_292
-```{r}
-ECV_ALIMENTO_P292 <- ECV_ALIMENTO_DEP[c("encuesta","comuna","barrio","estrato","p_292")]
-```
-2.Generación de un registro por encuesta.
-```{r}
-if (exists('ECV_ALIMENTO_P292_AGG')) rm(ECV_ALIMENTO_P292_AGG)
-  
-
-ECV_ALIMENTO_P292_AGG <- ECV_ALIMENTO_P292 %>% group_by(encuesta,comuna,barrio,estrato) %>%
-summarise(p_292 = getmode(p_292)) %>% ungroup()
-```
-
-3. Se procede a calcular los indicadores depues de realizar el agrupamiento mediante la moda
-```{r}
-#separo un dataSet con la informacion importante para calcular el indicador
-if(exists('ECV_ALIMENTO_P292')) rm(ECV_ALIMENTO_P292)
-ECV_ALIMENTO_P292 <- ECV_ALIMENTO_P292_AGG[,c("barrio","estrato","p_292")]
-
-#Genero un conteo del toral de respuestas por barrio y estrato
-ECV_ALIMENTO_P292_COUNTXR <- aggregate(ECV_ALIMENTO_P292$p_292,by=list(ECV_ALIMENTO_P292$barrio,ECV_ALIMENTO_P292$estrato,ECV_ALIMENTO_P292$p_292),function(x){NROW(x)})
-ECV_ALIMENTO_P292_COUNTXR <- setNames(ECV_ALIMENTO_P292_COUNTXR,c("barrio",'estrato',"p_292","totalRespuestaE"))
-
-#Genero un conteo del toral de respuestas por barrio 
-ECV_ALIMENTO_P292_CTB <- aggregate(ECV_ALIMENTO_P292$p_292,by=list(ECV_ALIMENTO_P292$barrio),function(x){NROW(x)})
-ECV_ALIMENTO_P292_CTB <- setNames(ECV_ALIMENTO_P292_CTB,c("barrio","TotalB"))
-
-#Separo otro DataSet con el barrio, estrato y la cantidad de respuestas para calcular el total #encuestado
-ECV_ALIMENTO_P292_COUNT <- ECV_ALIMENTO_P292_COUNTXR[,c("barrio","estrato","totalRespuestaE")]
-ECV_ALIMENTO_P292_COUNT <- aggregate(ECV_ALIMENTO_P292_COUNTXR$totalRespuesta,by=list(ECV_ALIMENTO_P292_COUNTXR$barrio,ECV_ALIMENTO_P292_COUNTXR$estrato), FUN="sum")
-
-ECV_ALIMENTO_P292_COUNT <- setNames(ECV_ALIMENTO_P292_COUNT,c("barrio","estrato","totalEncuestadosE"))
-# se cuenta con 2 dataSet para generar el indicador k_p295
-ECV_ALIMENTO_P292_K292 <- merge(x=ECV_ALIMENTO_P292_COUNT,y=ECV_ALIMENTO_P292_COUNTXR,by=c("barrio","estrato"))
-ECV_ALIMENTO_P292_K292 <- merge(x=ECV_ALIMENTO_P292_K292,y=ECV_ALIMENTO_P292_CTB,by=c("barrio"))
-#Calculo indicadores 
-ECV_ALIMENTO_P292_K292 <- within(ECV_ALIMENTO_P292_K292,k_292_1 <- totalRespuestaE / totalEncuestadosE  )
-ECV_ALIMENTO_P292_K292 <- within(ECV_ALIMENTO_P292_K292,k_292_2 <- totalRespuestaE / TotalB  )
-
-
-ECV_ALIMENTO_P292_K292 <- merge(x=ECV_ALIMENTO_P292_K292,y=ECV_BASICO,by = c("barrio","estrato"))
-
-ECV_ALIMENTO_P292_K292 <- ECV_ALIMENTO_P292_K292[,c("comuna","barrio","estrato","p_292","totalRespuestaE","totalEncuestadosE","TotalB","k_292_1","k_292_2")]
-```
-GRAFICO P_292
-```{r}
-ggplot(subset(ECV_ALIMENTO_P292_K292,comuna=="ALTAVISTA"),aes(x=estrato, y=k_292_1, fill=p_292)) + geom_bar( stat="identity",position = "stack")+facet_wrap( ~ barrio)
-```
-
-4. dataFrame principales de indicadores.
-  ECV_ALIMENTO_P291_K291
-  ECV_ALIMENTO_P292_K292
-  
-```{r}
-ECV_ALIMENTO_K2911_K2921 <- merge(x=ECV_ALIMENTO_P291_K291,y=ECV_ALIMENTO_P292_K292,by = c("comuna","barrio","estrato"))
-
-sub_ECV_ALIMENTO_K2911_K2921 <- subset(ECV_ALIMENTO_K2911_K2921,comuna == 'ALTAVISTA')
-cor(sub_ECV_ALIMENTO_K2911_K2921$k_291_1,sub_ECV_ALIMENTO_K2911_K2921$k_292_1)
-
-```
-
-cierro los objetos que ya no necesito.
-```{r}
-if(exists('ECV_ALIMENTO_P292')) rm(ECV_ALIMENTO_P292)
-if(exists('ECV_ALIMENTO_P292_AGG')) rm(ECV_ALIMENTO_P292_AGG)
-if(exists('ECV_ALIMENTO_P292_COUNT')) rm(ECV_ALIMENTO_P292_COUNT)
-if(exists('ECV_ALIMENTO_P292_COUNTXR')) rm(ECV_ALIMENTO_P292_COUNTXR)
-if(exists('ECV_ALIMENTO_P292_CTB')) rm(ECV_ALIMENTO_P292_CTB)
-```
-
-  
-5. GRAFICO DE CORRELACION
-
-```{r}
-ggpairs(sub_ECV_ALIMENTO_K2911_K2921, columns = c("k_291_2","k_292_2"), ggplot2::aes(colour=barrio)) 
-```
-
-Dimensión Alimentación.
-P_295: En este hogar: En los ultimos 30 días, ¿Alguna vez en su hogar se quedaron sin alimentos por falta de dinero?
-Indicador: Porcentaje de personas que alguna vez en su hogar se quedaron sin alimentos por falta de comida.
-Consideración:Se detecta que en los hogares existe la posibilidad que se hubiera llenado más de una encuestas, por este motivo se determina unificar el resultado de las encuestas por medio de la moda.
-Formula: 
-  Totales de personas SI / Totales Encuestados P_295
-  Totales de personas NO / Totales Encuestados P_295
-
-1. Se crea un dataSet con la informacion de la pregunta p_295
-```{r}
-ECV_ALIMENTO_P295 <- ECV_ALIMENTO_DEP[c("encuesta","comuna","barrio","estrato","p_295")]
-```
-2.Generación de un registro por encuesta.
-```{r}
-ECV_ALIMENTO_P295_AGG <- ECV_ALIMENTO_P295 %>% group_by(encuesta,comuna,barrio,estrato) %>% summarise(p_295 = getmode(p_295)) %>% ungroup()
-
-```
-```{r}
-#separo un dataSet con la informacion importante para calcular el indicador
-if(exists('ECV_ALIMENTO_P295')) rm(ECV_ALIMENTO_P295)
-ECV_ALIMENTO_P295 <- ECV_ALIMENTO_P295_AGG[,c("barrio","estrato","p_295")]
-
-#Genero un conteo del toral de respuestas por barrio y estrato
-ECV_ALIMENTO_P295_COUNTXR <- aggregate(ECV_ALIMENTO_P295$p_295,by=list(ECV_ALIMENTO_P295$barrio,ECV_ALIMENTO_P295$estrato,ECV_ALIMENTO_P295$p_295),function(x){NROW(x)})
-ECV_ALIMENTO_P295_COUNTXR <- setNames(ECV_ALIMENTO_P295_COUNTXR,c("barrio",'estrato',"p_295","totalRespuestaE"))
-
-#Genero un conteo del toral de respuestas por barrio 
-ECV_ALIMENTO_P295_CTB <- aggregate(ECV_ALIMENTO_P295$p_295,by=list(ECV_ALIMENTO_P295$barrio),function(x){NROW(x)})
-ECV_ALIMENTO_P295_CTB <- setNames(ECV_ALIMENTO_P295_CTB,c("barrio","TotalB"))
-
-#Separo otro DataSet con el barrio, estrato y la cantidad de respuestas para calcular el total #encuestado
-ECV_ALIMENTO_P295_COUNT <- ECV_ALIMENTO_P295_COUNTXR[,c("barrio","estrato","totalRespuestaE")]
-ECV_ALIMENTO_P295_COUNT <- aggregate(ECV_ALIMENTO_P295_COUNTXR$totalRespuesta,by=list(ECV_ALIMENTO_P295_COUNTXR$barrio,ECV_ALIMENTO_P295_COUNTXR$estrato), FUN="sum")
-
-ECV_ALIMENTO_P295_COUNT <- setNames(ECV_ALIMENTO_P295_COUNT,c("barrio","estrato","totalEncuestadosE"))
-# se cuenta con 2 dataSet para generar el indicador k_p295
-ECV_ALIMENTO_P295_K295 <- merge(x=ECV_ALIMENTO_P295_COUNT,y=ECV_ALIMENTO_P295_COUNTXR,by=c("barrio","estrato"))
-ECV_ALIMENTO_P295_K295 <- merge(x=ECV_ALIMENTO_P295_K295,y=ECV_ALIMENTO_P295_CTB,by=c("barrio"))
-#Calculo indicadores 
-ECV_ALIMENTO_P295_K295 <- within(ECV_ALIMENTO_P295_K295,k_295_1 <- totalRespuestaE / totalEncuestadosE  )
-ECV_ALIMENTO_P295_K295 <- within(ECV_ALIMENTO_P295_K295,k_295_2 <- totalRespuestaE / TotalB  )
-
-
-ECV_ALIMENTO_P295_K295 <- merge(x=ECV_ALIMENTO_P295_K295,y=ECV_BASICO,by = c("barrio","estrato"))
-
-ECV_ALIMENTO_P295_K295 <- ECV_ALIMENTO_P295_K295[,c("comuna","barrio","estrato","p_295","totalRespuestaE","totalEncuestadosE","TotalB","k_295_1","k_295_2")]
-```
-
-```{r}
-if(exists('ECV_ALIMENTO_P295')) rm(ECV_ALIMENTO_P295)
-if(exists('ECV_ALIMENTO_P295_AGG')) rm(ECV_ALIMENTO_P295_AGG)
-if(exists('ECV_ALIMENTO_P295_COUNT')) rm(ECV_ALIMENTO_P295_COUNT)
-if(exists('ECV_ALIMENTO_P295_COUNTXR')) rm(ECV_ALIMENTO_P295_COUNTXR)
-if(exists('ECV_ALIMENTO_P295_CTB')) rm(ECV_ALIMENTO_P295_CTB)
-```
-5. GRAFICO DE CORRELACION
-dataSet principales
-ECV_ALIMENTO_P291_K291
-ECV_ALIMENTO_P292_K292
-ECV_ALIMENTO_P295_K295
-```{r}
-ggplot(subset(ECV_ALIMENTO_P295_K295,comuna=="ALTAVISTA"),aes(x=estrato, y=k_295_1, fill=p_295)) + geom_bar( stat="identity",position = "stack")+facet_wrap( ~ barrio)
-```
-
-
-
-################################## propuesta Juan David ###################################
-
-```{r}
-sqldf("select barrio, count(p_291) from ECV_ALIMENTO_DEP  WHERE p_291 = '1' group by barrio")
-```
-
-
 
 **Dimensión Vivienda y Servicios Públicos**
 
@@ -338,8 +96,10 @@ Para la el análisis de la dimensión de VIVIENDA Y SERVICIOS PUBLICOS en los ba
  * Fórmula: Cantidad de hogares que llegaron al barrio por problemas de orden público / Número total de hogares
  
 * P_30 - ¿Cuánto hace que vive en ESTE BARRIO o VEREDA? En años
- *Indicador: Porcentaje de familias que han vivo en el barrio o vereda por más de 6 añios
- * Fórmula: Cantidad de hogares que llevan viviendo en el barrio o vereda más de 6 añios / Número total de hogares
+ * Indicador_1: Porcentaje de familias que han vivo en el barrio o vereda por más de 6 años
+ * Fórmula: Cantidad de hogares que llevan viviendo en el barrio o vereda más de 6 años / Número total de hogares
+ * Indicador_2: Tiempo promedio de permanencia de las personas en el barrio
+ * Fórmula: Sumatoria de los tiempos de permanencia de las personas en el barrio / Número total de hogares
 
 * P_146 - Tipo de Vivienda
  * Indicador_1: Porcentaje de hogares del barrio que viven en Rancho o vivienda de desechos (1)
@@ -384,10 +144,10 @@ Cálculo P_12
 
 ```{r}
 #Se toma el máximo número de integrantes por encuesta
-ECV_VIVIENDA_BARRIO <-ECV_VIVIENDA %>% select(encuesta,barrio,p_12) %>% 
-                      group_by(encuesta, barrio) %>% 
+ECV_VIVIENDA_BARRIO <-ECV_VIVIENDA %>% select(encuesta,comuna, barrio,p_12) %>% 
+                      group_by(encuesta, comuna, barrio) %>% 
                       summarise(total = n_distinct(encuesta),p_12 = max(p_12)) %>% ungroup() %>% 
-                      group_by(barrio) %>% summarise(total = sum(total), p_12 = sum(p_12) / sum(total)) %>%   ungroup() 
+                      group_by(comuna,barrio) %>% summarise(total = sum(total), p_12 = sum(p_12) / sum(total)) %>%   ungroup() 
 #write.xlsx(ECV_VIVIENDA[ECV_VIVIENDA$barrio == 'AGUAS FRÍAS',], 'aguasfrias2.xlsx') 
 ```
 
@@ -396,10 +156,10 @@ Cálculo P_26
 ```{r}
 #ECV_VIVIENDA[,c("p_26")]
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_26 == 1,] %>% 
-       group_by(encuesta, barrio) %>% summarise(p_26 = min(p_26)) %>% ungroup() %>%
-       group_by(barrio) %>% summarise(p_26 = sum(p_26)) %>% ungroup()
+       group_by(encuesta, comuna, barrio) %>% summarise(p_26 = min(p_26)) %>% ungroup() %>%
+       group_by(comuna,barrio) %>% summarise(p_26 = sum(p_26)) %>% ungroup()
 
-ECV_VIVIENDA_BARRIO<-merge(x=ECV_VIVIENDA_BARRIO,y=tmp,by="barrio",all.x=TRUE)
+ECV_VIVIENDA_BARRIO <- merge(x = ECV_VIVIENDA_BARRIO, y = tmp,by.x=(c("comuna", "barrio")), all.x = TRUE)
 
 if(exists('tmp')) rm(tmp)
 
@@ -413,10 +173,10 @@ ECV_VIVIENDA$p_antiguedad <- ifelse(ECV_VIVIENDA$p_30 >= 0 & ECV_VIVIENDA$p_30 <
 # 1 menos de 5 años, 0 No sabe, 2 más de 6 años
 
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_antiguedad == 2,] %>% 
-       group_by(encuesta, barrio) %>% summarise(p_30 = n_distinct(p_antiguedad)) %>% ungroup() %>%
-       group_by(barrio) %>% summarise(p_30 = sum(p_30)) %>% ungroup()
+       group_by(encuesta, comuna ,barrio) %>% summarise(p_30 = n_distinct(p_antiguedad)) %>% ungroup() %>%
+       group_by(comuna, barrio) %>% summarise(p_30 = sum(p_30)) %>% ungroup()
 
-ECV_VIVIENDA_BARRIO <- merge(x=ECV_VIVIENDA_BARRIO, y=tmp,by="barrio", all.x=TRUE) 
+ECV_VIVIENDA_BARRIO <- merge(x = ECV_VIVIENDA_BARRIO, y = tmp,by.x=(c("comuna", "barrio")), all.x = TRUE)
 
 if(exists('tmp')) rm(tmp)
 
@@ -428,10 +188,10 @@ ECV_VIVIENDA_BARRIO$p_30 <- ECV_VIVIENDA_BARRIO$p_30 / ECV_VIVIENDA_BARRIO$total
 ```{r}
 #ECV_VIVIENDA[ECV_VIVIENDA$p_146 == 1,]
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_146 == 1,] %>% 
-       group_by(encuesta, barrio) %>% summarise(p_146 = min(p_146)) %>% ungroup() %>%
-       group_by(barrio) %>% summarise(p_146 = sum(p_146)) %>% ungroup()
+       group_by(encuesta, comuna, barrio) %>% summarise(p_146 = n_distinct(p_146)) %>% ungroup() %>%
+       group_by(comuna, barrio) %>% summarise(p_146 = sum(p_146)) %>% ungroup()
 
-ECV_VIVIENDA_BARRIO <- merge(x=ECV_VIVIENDA_BARRIO,y=tmp,by="barrio",all.x=TRUE) 
+ECV_VIVIENDA_BARRIO <- merge(x = ECV_VIVIENDA_BARRIO, y = tmp,by.x=(c("comuna", "barrio")), all.x = TRUE)
 
 if(exists('tmp')) rm(tmp)
 
@@ -444,10 +204,10 @@ colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_146'] <- 'p_14
 
 ```{r}
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_146 == 2,] %>% 
-       group_by(encuesta, barrio) %>% summarise(p_146 = min(p_146)) %>% ungroup() %>%
-       group_by(barrio) %>% summarise(p_146 = sum(p_146)) %>% ungroup()
+       group_by(encuesta, comuna, barrio) %>% summarise(p_146 = n_distinct(p_146)) %>% ungroup() %>%
+       group_by(comuna, barrio) %>% summarise(p_146 = sum(p_146)) %>% ungroup()
 
-ECV_VIVIENDA_BARRIO <- merge(x=ECV_VIVIENDA_BARRIO,y=tmp,by="barrio",all.x=TRUE) 
+ECV_VIVIENDA_BARRIO <- merge(x = ECV_VIVIENDA_BARRIO, y = tmp,by.x=(c("comuna", "barrio")), all.x = TRUE)
 
 if(exists('tmp')) rm(tmp)
 
@@ -460,10 +220,10 @@ colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_146'] <- 'p_14
 
 ```{r}
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_146 == 3,] %>% 
-       group_by(encuesta, barrio) %>% summarise(p_146 = min(p_146)) %>% ungroup() %>%
-       group_by(barrio) %>% summarise(p_146 = sum(p_146)) %>% ungroup()
+       group_by(encuesta, comuna, barrio) %>% summarise(p_146 = n_distinct(p_146)) %>% ungroup() %>%
+       group_by(comuna, barrio) %>% summarise(p_146 = sum(p_146)) %>% ungroup()
 
-ECV_VIVIENDA_BARRIO <- merge(x=ECV_VIVIENDA_BARRIO,y=tmp,by="barrio",all.x=TRUE) 
+ECV_VIVIENDA_BARRIO <- merge(x = ECV_VIVIENDA_BARRIO, y = tmp,by.x=(c("comuna", "barrio")), all.x = TRUE)
 
 if(exists('tmp')) rm(tmp)
 
@@ -476,10 +236,10 @@ colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_146'] <- 'p_14
 
 ```{r}
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_146 == 4,] %>% 
-       group_by(encuesta, barrio) %>% summarise(p_146 = min(p_146)) %>% ungroup() %>%
-       group_by(barrio) %>% summarise(p_146 = sum(p_146)) %>% ungroup()
+       group_by(encuesta, comuna, barrio) %>% summarise(p_146 = n_distinct(p_146)) %>% ungroup() %>%
+       group_by(comuna, barrio) %>% summarise(p_146 = sum(p_146)) %>% ungroup()
 
-ECV_VIVIENDA_BARRIO <- merge(x=ECV_VIVIENDA_BARRIO,y=tmp,by="barrio",all.x=TRUE) 
+ECV_VIVIENDA_BARRIO <- merge(x = ECV_VIVIENDA_BARRIO, y = tmp,by.x=(c("comuna", "barrio")), all.x = TRUE)
 
 if(exists('tmp')) rm(tmp)
 
@@ -492,10 +252,10 @@ colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_146'] <- 'p_14
 
 ```{r}
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_146 == 5,] %>% 
-       group_by(encuesta, barrio) %>% summarise(p_146 = min(p_146)) %>% ungroup() %>%
-       group_by(barrio) %>% summarise(p_146 = sum(p_146)) %>% ungroup()
+       group_by(encuesta, comuna, barrio) %>% summarise(p_146 = n_distinct(p_146)) %>% ungroup() %>%
+       group_by(comuna, barrio) %>% summarise(p_146 = sum(p_146)) %>% ungroup()
 
-ECV_VIVIENDA_BARRIO <- merge(x=ECV_VIVIENDA_BARRIO,y=tmp,by="barrio",all.x=TRUE) 
+ECV_VIVIENDA_BARRIO <- merge(x = ECV_VIVIENDA_BARRIO, y = tmp,by.x=(c("comuna", "barrio")), all.x = TRUE) 
 
 if(exists('tmp')) rm(tmp)
 
@@ -508,10 +268,10 @@ Cálculo P_149
 
 ```{r}
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_149 == 1,] %>% 
-       group_by(encuesta, barrio) %>% summarise(p_149 = min(p_149)) %>% ungroup() %>%
-       group_by(barrio) %>% summarise(p_149 = sum(p_149)) %>% ungroup()
+       group_by(encuesta, comuna, barrio) %>% summarise(p_149 = getmode(p_149)) %>% ungroup() %>%
+       group_by(comuna, barrio) %>% summarise(p_149 = sum(p_149)) %>% ungroup()
 
-ECV_VIVIENDA_BARRIO <- merge(x=ECV_VIVIENDA_BARRIO,y=tmp,by="barrio",all.x=TRUE) 
+ECV_VIVIENDA_BARRIO <- merge(x = ECV_VIVIENDA_BARRIO, y = tmp,by.x=(c("comuna", "barrio")), all.x = TRUE) 
 
 if(exists('tmp')) rm(tmp)
 
@@ -525,10 +285,10 @@ ECV_VIVIENDA$p_SP <- ifelse(ECV_VIVIENDA$p_158 == 1 & ECV_VIVIENDA$p_162 == 1 & 
                           & ECV_VIVIENDA$p_174 == 1, 1, 0)
 
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_SP == 1,] %>% 
-       group_by(encuesta, barrio) %>% summarise(p_SP = min(p_SP)) %>% ungroup() %>%
-       group_by(barrio) %>% summarise(p_SP = sum(p_SP)) %>% ungroup()
+       group_by(encuesta, comuna, barrio) %>% summarise(p_SP = getmode(p_SP)) %>% ungroup() %>%
+       group_by(comuna, barrio) %>% summarise(p_SP = sum(p_SP)) %>% ungroup()
 
-ECV_VIVIENDA_BARRIO <- merge(x=ECV_VIVIENDA_BARRIO, y=tmp, by="barrio", all.x=TRUE) 
+ECV_VIVIENDA_BARRIO <- merge(x = ECV_VIVIENDA_BARRIO, y = tmp,by.x=(c("comuna", "barrio")), all.x = TRUE)
 
 if(exists('tmp')) rm(tmp)
 
@@ -542,10 +302,10 @@ ECV_VIVIENDA$p_SPS <- ifelse(ECV_VIVIENDA$p_160 == 1 | ECV_VIVIENDA$p_164 == 1 |
                           | ECV_VIVIENDA$p_169 == 1 | ECV_VIVIENDA$p_180 == 1, 1, 0)
 
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_SPS == 1,] %>% 
-       group_by(encuesta, barrio) %>% summarise(p_SPS = min(p_SPS)) %>% ungroup() %>%
-       group_by(barrio) %>% summarise(p_SPS = sum(p_SPS)) %>% ungroup()
+       group_by(encuesta, comuna, barrio) %>% summarise(p_SPS = getmode(p_SPS)) %>% ungroup() %>%
+       group_by(comuna, barrio) %>% summarise(p_SPS = sum(p_SPS)) %>% ungroup()
 
-ECV_VIVIENDA_BARRIO <- merge(x=ECV_VIVIENDA_BARRIO,y=tmp,by="barrio",all.x=TRUE) 
+ECV_VIVIENDA_BARRIO <- merge(x = ECV_VIVIENDA_BARRIO, y = tmp,by.x=(c("comuna", "barrio")), all.x = TRUE)
 
 if(exists('tmp')) rm(tmp)
 
@@ -556,10 +316,10 @@ Cálculo P_178
 
 ```{r}
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_178 == 1,] %>% 
-       group_by(encuesta, barrio) %>% summarise(p_178 = min(p_178)) %>% ungroup() %>%
-       group_by(barrio) %>% summarise(p_178 = sum(p_178)) %>% ungroup()
+       group_by(encuesta, comuna, barrio) %>% summarise(p_178 = min(p_178)) %>% ungroup() %>%
+       group_by(comuna, barrio) %>% summarise(p_178 = sum(p_178)) %>% ungroup()
 
-ECV_VIVIENDA_BARRIO<-merge(x=ECV_VIVIENDA_BARRIO,y=tmp,by="barrio",all.x=TRUE)
+ECV_VIVIENDA_BARRIO <- merge(x = ECV_VIVIENDA_BARRIO, y = tmp,by.x=(c("comuna", "barrio")), all.x = TRUE)
 
 if(exists('tmp')) rm(tmp)
 
@@ -570,10 +330,10 @@ ECV_VIVIENDA_BARRIO$p_178 <- ECV_VIVIENDA_BARRIO$p_178 / ECV_VIVIENDA_BARRIO$tot
 
 ```{r}
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_226 == 1,] %>% 
-       group_by(encuesta, barrio) %>% summarise(p_226 = min(p_226)) %>% ungroup() %>%
-       group_by(barrio) %>% summarise(p_226 = sum(p_226)) %>% ungroup()
+       group_by(encuesta, comuna, barrio) %>% summarise(p_226 = n_distinct(encuesta)) %>% ungroup() %>%
+       group_by(comuna, barrio) %>% summarise(p_226 = sum(p_226)) %>% ungroup()
 
-ECV_VIVIENDA_BARRIO <- merge(x=ECV_VIVIENDA_BARRIO, y=tmp,by="barrio", all.x=TRUE) 
+ECV_VIVIENDA_BARRIO <- merge(x = ECV_VIVIENDA_BARRIO, y = tmp,by.x=(c("comuna", "barrio")), all.x = TRUE)
 
 if(exists('tmp')) rm(tmp)
 
@@ -586,10 +346,10 @@ colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_226'] <- 'p_22
 
 ```{r}
 tmp <- subset(ECV_VIVIENDA, p_226 == 2 | p_226 == 3) %>% 
-       group_by(encuesta, barrio) %>% summarise(p_226 = min(p_226)) %>% ungroup() %>%
-       group_by(barrio) %>% summarise(p_226 = sum(p_226)) %>% ungroup()
+       group_by(encuesta, comuna, barrio) %>% summarise(p_226 = n_distinct(encuesta)) %>% ungroup() %>%
+       group_by(comuna, barrio) %>% summarise(p_226 = sum(p_226)) %>% ungroup()
 
-ECV_VIVIENDA_BARRIO <- merge(x=ECV_VIVIENDA_BARRIO, y=tmp,by="barrio", all.x=TRUE) 
+ECV_VIVIENDA_BARRIO <- merge(x = ECV_VIVIENDA_BARRIO, y = tmp,by.x=(c("comuna", "barrio")), all.x = TRUE) 
 
 if(exists('tmp')) rm(tmp)
 
@@ -602,10 +362,10 @@ colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_226'] <- 'p_22
 
 ```{r}
 tmp <- subset(ECV_VIVIENDA, p_226 == 4 | p_226 == 5 | p_226 == 6) %>% 
-       group_by(encuesta, barrio) %>% summarise(p_226 = min(p_226)) %>% ungroup() %>%
-       group_by(barrio) %>% summarise(p_226 = sum(p_226)) %>% ungroup()
+       group_by(encuesta, comuna, barrio) %>% summarise(p_226 = n_distinct(encuesta)) %>% ungroup() %>%
+       group_by(comuna, barrio) %>% summarise(p_226 = sum(p_226)) %>% ungroup()
 
-ECV_VIVIENDA_BARRIO <- merge(x=ECV_VIVIENDA_BARRIO, y=tmp,by="barrio", all.x=TRUE) 
+ECV_VIVIENDA_BARRIO <- merge(x = ECV_VIVIENDA_BARRIO, y = tmp,by.x=(c("comuna", "barrio")), all.x = TRUE) 
 
 if(exists('tmp')) rm(tmp)
 
@@ -755,12 +515,21 @@ ECV_VIVIENDA_BARRIO[is.na(ECV_VIVIENDA_BARRIO)] <- 0
 Si bien, la mayoria de los indicadores del dataframe ECV_VIVIENDA_BARRIO se encuentran en función de hogares existe un indicador en función de personas del hogar, por lo tanto es necesario poner todos los indicadores en la misma escala
 ```{r}
 #Kmeans no acepta variables categoricas, el identificador del barrio se convierte en nombre de filas para que no sean consideras por el algoritmo
-ECV_VIVIENDA_BARRIO_SCALE <- tibble::column_to_rownames(ECV_VIVIENDA_BARRIO, var = "barrio")
+ECV_VIVIENDA_BARRIO_SCALE <- tibble::column_to_rownames(ECV_VIVIENDA_BARRIO, var = c("comuna","barrio"))
 
 ECV_VIVIENDA_BARRIO_SCALE <- scale(ECV_VIVIENDA_BARRIO_SCALE)
 
 #ECV_VIVIENDA_BARRIO_SCALE <- ECV_VIVIENDA_BARRIO %>% mutate_if(is.numeric,scale)
 ```
+```{r}
+ECV_VIVIENDA_BARRIO_CP <- ECV_VIVIENDA_BARRIO
+ECV_VIVIENDA_BARRIO_CP$barrio <- paste(ECV_VIVIENDA_BARRIO_CP$comuna,ECV_VIVIENDA_BARRIO_CP$barrio,sep = "-")
+ECV_VIVIENDA_BARRIO_CP$comuna <- NULL
+
+ECV_VIVIENDA_BARRIO_SCALE <- tibble::column_to_rownames(ECV_VIVIENDA_BARRIO_CP, var = "barrio")
+
+```
+
 
 ```{r}
 any(is.na(ECV_VIVIENDA_BARRIO_SCALE))
@@ -779,7 +548,7 @@ Método de la siluetta para determinar el k óptimo
 ```{r}
 fviz_nbclust(ECV_VIVIENDA_BARRIO_SCALE, kmeans, method = "silhouette")
 ```
-De acuerdo a la gráfica donde se da el cambio de pendiente más significativo es en el k = 8
+De acuerdo a la gráfica donde se da el cambio de pendiente más significativo es en el k = 3
 
 
 Aplicación de Kmeans a partir del k recomendado en la gráfica anterior
@@ -787,9 +556,11 @@ Aplicación de Kmeans a partir del k recomendado en la gráfica anterior
 ```{r}
 #[,2:9]
 set.seed(1988)
-kmeans_model <- kmeans(ECV_VIVIENDA_BARRIO_SCALE, 8, nstart = 50)
+kmeans_model <- kmeans(ECV_VIVIENDA_BARRIO_SCALE, 3, nstart = 50)
 kmeans_model
 ```
+El modelo da un ajuste del 60.4% con k = 3, el número de k óptimo tomado de la gráfica del codo y de la silueta 
+
 Agregar el cluster a la data original
 ```{r}
 df_member <- cbind(ECV_VIVIENDA_BARRIO, cluster = kmeans_model$cluster)
@@ -797,17 +568,46 @@ head(df_member)
 ```
 Visualización de los grupos
 ```{r}
-#palette=c("red", "blue", "black", "darkgreen")
-# fviz_cluster(kmeans_model, data = ECV_VIVIENDA_BARRIO_SCALE,
-#              ellipse.type = "euclid",
-#              star.plot = T,
-#              repel = T,
-#              ggtheme = theme())
-
 fviz_cluster(kmeans_model, data = ECV_VIVIENDA_BARRIO_SCALE)
 
 ```
-```{r}
+Recordemos las indicadores asociados a la dimensión VIVIENDA
 
+* P_12 - Promedio de personas por hogar
+* P_26 - Porcentaje de hogares por barrio que han llegado por problemas de orden público
+* P_30 - Porcentaje de familias que han vivo en el barrio o vereda por más de 6 años
+* P_146_1 - Porcentaje de hogares del barrio que viven en Rancho o vivienda de desechos
+* P_146_2 - Porcentaje de hogares del barrio que viven en Cuarto(s) 
+* P_146_3 - Porcentaje de hogares del barrio que viven en Cuartos en inquilinato
+* P_146_4 - Porcentaje de hogares del barrio que viven en Apartamento
+* P_146_5 - Porcentaje de hogares del barrio que viven en Casa
+* P_149 - Porcentaje de hogares que toman el agua de entidades prestadoras de servicios públicos domiciliarios 
+* P_158 - Porcentaje de hogares con acceso a almenos uno de los servicios públicos básicos
+* P_160 - Porcentaje de hogares en el momento de la encuesta con algún servicios públicos suspendido
+* P_178 - Porcentaje de hogares con servicios públicos de Conexión a Internet
+* P_226_1 - Porcentaje de hogares en arriendo o subarriendo mensual
+* P_226_2 - Porcentaje de hogares en propia (2,3) 
+* P_226_3 - Porcentaje de hogares en otras condiciones (4,5,6)
+
+```{r}
+df_member[order(df_member$cluster),]
 ```
+```{r}
+df_member[df_member$cluster == 6,]
+```
+Conclusiones grupo 8
+Los barrios que conforman el cluster 8 (Boqueron y La ilusión) se caracterizan por que sus habitantes no llegaron al barrio por problemas de orden púbico, viven en casas, tiene los servicios públicos básicos y ninguno de ellos estan suspendidos, muchos de ellos viven en casa propia
+
+Conclusiones grupo 7
+Los barrios de este cluster son barrios donde más del 60% de sus habitantes han vivido allí por más de 6 años, más del 20% de los habitantes de estos barrios viven en casas propias y tienen acceso a servicios públicos básicos. 
+
+Conclusiones grupo 6
+```{r}
+summary(df_member[df_member$cluster == 6,])
+```
+
+
+En promedio hay más de 3 habitantes por hogar en los barrios de este grupo, al menos el 9% de la población llego al barrio debido problemos de orden público y actualmente viven en apartamento de su propiedad y cuentan con servicios públicos básicos  
+
+
 
