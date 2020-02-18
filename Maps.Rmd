@@ -1,0 +1,196 @@
+---
+title: "Georreferenciacion"
+author: "Santiago Arboleda"
+date: "18/2/2020"
+output: html_document
+---
+
+```{r}
+library(rgdal)
+library(leaflet)
+#barrios_med <- readOGR(dsn=path.expand("~/Barrio_Vereda/Barrio_Vereda.shp"),layer="Barrio_Vereda")
+barrios_med <- readOGR (file.choose("Barrio_Vereda/Barrio_Vereda.shp"))
+```
+
+```{r}
+nombres_barrios <- iconv(barrios_med@data$NOMBRE,"UTF-8","ISO_8859-1")
+#print(nombres_barrios)
+```
+
+```{r}
+m <- leaflet(barrios_med)
+m <- addPolygons(m,popup=nombres_barrios)
+m <- addTiles(m)
+m
+```
+
+```{r}
+print(EjemploMapa)
+```
+
+```{r}
+print(barrios_med)
+```
+
+
+
+```{r}
+nom_bar <- merge(x = barrios_med, y = EjemploMapa, by.x="NOMBRE", by.y="Barrio", all.x = TRUE)
+names(nom_bar)
+```
+
+```{r}
+bins <- c(0, 10, 20, 50)
+pal <- colorBin("YlOrRd", domain = nom_bar$Cluster, bins = bins)
+m <- leaflet(nom_bar)
+m <- addPolygons(m,
+  fillColor = ~pal(Cluster),
+  weight = 2,
+  opacity = 1,
+  color = "red",
+  dashArray = "3",
+  fillOpacity = 0.7)
+m
+```
+
+
+
+```{r}
+m <- leaflet(nom_bar)
+colores=sample(x=c("red","green","yellow","blue"),size=length(nombres_barrios),replace=TRUE)
+m <- addPolygons(m,popup=nombres_barrios, color=colores)
+m <- addTiles(m)
+m
+```
+
+```{r}
+factpal <- colorFactor(topo.colors(4), nom_bar$Cluster)
+#leaflet(nom_bar) %>%
+#addPolygons(stroke = FALSE, smoothFactor = 0.2, fillOpacity = 1,color = ~factpal(Cluster))
+
+m <- leaflet(nom_bar)
+m <- addPolygons(m,popup=nombres_barrios, color=~factpal(Cluster), opacity = 0.7,
+                 fillOpacity = 0.7, dashArray = "5",)
+m <- addTiles(m)
+m
+
+```
+
+```{r}
+pal <- colorFactor(palette = c("blue", "red", "green", "yellow"), levels = c("1", "2", "3", "4"))
+m <- leaflet(nom_bar)
+m <- addPolygons(m,popup=nombres_barrios, color=~pal(Cluster), opacity = 0.7,
+                 fillOpacity = 0.7, dashArray = "5",)
+m <- addTiles(m)
+m
+```
+
+```{r}
+pal <- colorFactor(palette = "viridis", domain = nom_bar$Cluster)
+m <- leaflet(nom_bar)
+m <- addPolygons(m,popup=nombres_barrios, color=~pal(Cluster), opacity = 0.7,
+                 fillOpacity = 0.7, dashArray = "5",)
+m <- addTiles(m)
+m
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
