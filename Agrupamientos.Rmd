@@ -7,83 +7,9 @@ date: "Semestre 02-2019"
 En este trabajo se abordará el problema de agrupar los barrios de Medellín de acuerdo a distintas dimensiones y
 analizar espacialmente las agrupaciones.
 
-
-Librerias a utilizar en el desarrollo del proyecto
-```{r}
-#library(xlsx)
-library("factoextra")
-library(cluster)
-library(plyr)
-library(ggplot2)
-library(GGally)
-library(dplyr)
-library(magrittr)
-library('sqldf')
-
-```
-
-Función que me permite sacar la moda para las preguntas orientadas a hogares
-```{r}
-getmode <- function(v) {
-   uniqv <- unique(v)
-   uniqv[which.max(tabulate(match(v, uniqv)))]
-}
-```
-
-El insumo principal de este trabajo son los datos abiertos del portal Medata y en particular la Encuesta de Calidad de Vida Medellín Cómo vamos.
-```{r}
-ECV <- read.csv("./dataSet/encuesta_calidad_vida.csv", header = TRUE, sep=";")
-```
-
-Se procede a normalizar las cabeceras del dataframe del set de datos
-```{r}
-names_ECV <- names(ECV)
-i = 1
-l_names <- list()
-for (name_col in names_ECV) {
-    str_col <- unlist(strsplit(name_col," "))
-    str_col <- unlist(strsplit(str_col,"[.]"))
-    if (length(str_col) > 2){
-        l_names[i] <- paste(str_col[2],str_col[3],sep = '_')    
-    }
-    else
-    {
-        l_names[i] <- paste(str_col[2])   
-    }
-
-    i = i + 1
-}
-
-ECV <- setNames(ECV,l_names)
-```
-
-1. Caracterización de las dimensiones para la dimensión ALIMENTACION
-
-
-```{r}
-summary(ECV)
-```
-
-
-Definiciones:
-
-Cuando las preguntas hacen referencia a nivel de hogar, tomaremos la moda como referencia, es decir, el valor más representativo en las respuestas obtenidas en ese hogar. La proporción se hará sobre el total de los encuestados.
-
 **Dimensión Vivienda y Servicios Públicos**
 
-La dimensión de vivienda y servicios públicos miden dentro de la encuesta de calidad de vida como viven los Medellinenses, en que condiciones estan sus hogares a nivel de tipo de vivienda y sus características físicas: material de paredes y pisos,t enencia y financiación de la vivienda: tipo de tenencia de la vivienda; tenencia de escritura de propiedad; subsidios recibidos para la compra, construcción, mejora, titulación o escrituración de la vivienda.
-
-
-```{r}
-ECV_VIVIENDA <- ECV[,c("encuesta","persona","comuna","barrio","estrato","p_1","p_12","p_26","p_30","p_146",
-                       "p_149","p_158","p_160","p_162","p_164","p_165","p_169","p_173","p_174","p_178","p_180","p_226")]
-```
-
-No existen valores nulos dentro de las preguntas de vivienda 
-```{r}
-summary(ECV_VIVIENDA)
-```
-
+La dimensión de vivienda y servicios públicos miden dentro de la encuesta de calidad de vida como viven los Medellinenses, en que condiciones estan sus hogares a nivel de tipo de vivienda y sus características físicas: material de paredes y pisos,t enencia y financiación de la vivienda: tipo de tenencia de la vivienda; tenencia de escritura de propiedad; subsidios recibidos para la compra, construcción, mejora, titulación o escrituración de la vivienda
 
 Para la el análisis de la dimensión de VIVIENDA Y SERVICIOS PUBLICOS en los barrios de Medellín se toman las siguientes preguntas con sus respectivos indicadores:
 
@@ -137,10 +63,83 @@ Para la el análisis de la dimensión de VIVIENDA Y SERVICIOS PUBLICOS en los ba
  * Indicador_1: Porcentaje de hogares en arriendo o subarriendo mensual (1) 
  * Indicador_2: Porcentaje de hogares en propia (2,3) 
  * Indicador_3: Porcentaje de hogares en otras condiciones (4,5,6) 
- * Fórmula: Número de hogares ocupadas bajo la caracteristica ... / Número total de hogares
+ * Fórmula: Número de hogares ocupadas bajo la caracteristicas de cada uno de los indicadores / Número total de hogares
+ 
+El insumo principal de este trabajo son los datos abiertos del portal Medata y en particular la Encuesta de Calidad de Vida Medellín Cómo vamos.
+```{r}
+ECV <- read.csv("./dataSet/encuesta_calidad_vida.csv", header = TRUE, sep=";")
+```
+
+Definiciones:
+
+Cuando las preguntas hacen referencia a nivel de hogar, tomaremos la moda como referencia, es decir, el valor más representativo en las respuestas obtenidas en ese hogar. La proporción se hará sobre el total de los encuestados.
 
 
-Cálculo P_12
+Librerias a utilizar en el desarrollo del proyecto
+```{r}
+#library(xlsx)
+library("factoextra")
+library(cluster)
+library(plyr)
+library(ggplot2)
+library(GGally)
+library(dplyr)
+library(magrittr)
+library('sqldf')
+library(rgdal)
+library(leaflet)
+```
+
+Función que permite sacar la moda para las preguntas orientadas a hogares
+```{r}
+getmode <- function(v) {
+   uniqv <- unique(v)
+   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+```
+
+Se procede a normalizar las cabeceras del dataframe del set de datos
+```{r}
+names_ECV <- names(ECV)
+i = 1
+l_names <- list()
+for (name_col in names_ECV) {
+    str_col <- unlist(strsplit(name_col," "))
+    str_col <- unlist(strsplit(str_col,"[.]"))
+    if (length(str_col) > 2){
+        l_names[i] <- paste(str_col[2],str_col[3],sep = '_')    
+    }
+    else
+    {
+        l_names[i] <- paste(str_col[2])   
+    }
+
+    i = i + 1
+}
+
+ECV <- setNames(ECV,l_names)
+```
+
+1. Caracterización de las dimensiones para la dimensión VIVIENDA Y SERVICIOS PUBLICOS
+
+```{r}
+summary(ECV)
+```
+
+
+```{r}
+ECV_VIVIENDA <- ECV[,c("encuesta","persona","comuna","barrio","estrato","p_1","p_12","p_26","p_30","p_146",
+                       "p_149","p_158","p_160","p_162","p_164","p_165","p_169","p_173","p_174","p_178","p_180","p_226")]
+```
+
+No existen valores nulos dentro de las preguntas de vivienda 
+```{r}
+summary(ECV_VIVIENDA)
+```
+
+Se procede a realizar el cálculo de cada uno de los indicadores definidos para la dimensión Vivienda y 
+
+Cálculo P_12. Promedio de personas por hogar
 
 ```{r}
 #Se toma el máximo número de integrantes por encuesta
@@ -151,7 +150,7 @@ ECV_VIVIENDA_BARRIO <-ECV_VIVIENDA %>% select(encuesta,comuna, barrio,p_12) %>%
 #write.xlsx(ECV_VIVIENDA[ECV_VIVIENDA$barrio == 'AGUAS FRÍAS',], 'aguasfrias2.xlsx') 
 ```
 
-Cálculo P_26
+Cálculo P_26. Porcentaje de hogares por barrio que han llegado por problemas de orden público
 
 ```{r}
 #ECV_VIVIENDA[,c("p_26")]
@@ -166,7 +165,7 @@ if(exists('tmp')) rm(tmp)
 ECV_VIVIENDA_BARRIO$p_26 <- ECV_VIVIENDA_BARRIO$p_26 / ECV_VIVIENDA_BARRIO$total
 ```
 
-Cálculo P_30
+Cálculo P_30. Porcentaje de familias que han vivo en el barrio o vereda por más de 6 años
 
 ```{r}
 ECV_VIVIENDA$p_antiguedad <- ifelse(ECV_VIVIENDA$p_30 >= 0 & ECV_VIVIENDA$p_30 <= 5, 1, ifelse(ECV_VIVIENDA$p_30 < 0, 0, 2))
@@ -183,7 +182,7 @@ if(exists('tmp')) rm(tmp)
 ECV_VIVIENDA_BARRIO$p_30 <- ECV_VIVIENDA_BARRIO$p_30 / ECV_VIVIENDA_BARRIO$total 
 ```
 
-*Cálculo P_146_1*
+*Cálculo P_146_1. Porcentaje de hogares del barrio que viven en Rancho o vivienda de desechos*
 
 ```{r}
 #ECV_VIVIENDA[ECV_VIVIENDA$p_146 == 1,]
@@ -200,7 +199,7 @@ ECV_VIVIENDA_BARRIO$p_146 <- ECV_VIVIENDA_BARRIO$p_146 / ECV_VIVIENDA_BARRIO$tot
 colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_146'] <- 'p_146_1'
 ```
 
-*Cálculo P_146_2*
+*Cálculo P_146_2. Porcentaje de hogares del barrio que viven en Cuarto(s)*
 
 ```{r}
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_146 == 2,] %>% 
@@ -216,7 +215,7 @@ ECV_VIVIENDA_BARRIO$p_146 <- ECV_VIVIENDA_BARRIO$p_146 / ECV_VIVIENDA_BARRIO$tot
 colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_146'] <- 'p_146_2'
 ```
 
-*Cálculo P_146_3*
+*Cálculo P_146_3. Porcentaje de hogares del barrio que viven en Cuartos en inquilinato*
 
 ```{r}
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_146 == 3,] %>% 
@@ -232,7 +231,7 @@ ECV_VIVIENDA_BARRIO$p_146 <- ECV_VIVIENDA_BARRIO$p_146 / ECV_VIVIENDA_BARRIO$tot
 colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_146'] <- 'p_146_3'
 ```
 
-*Cálculo P_146_4*
+*Cálculo P_146_4. Porcentaje de hogares del barrio que viven en Apartamento*
 
 ```{r}
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_146 == 4,] %>% 
@@ -248,7 +247,7 @@ ECV_VIVIENDA_BARRIO$p_146 <- ECV_VIVIENDA_BARRIO$p_146 / ECV_VIVIENDA_BARRIO$tot
 colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_146'] <- 'p_146_4'
 ```
 
-*Cálculo P_146_5*
+*Cálculo P_146_5. Porcentaje de hogares del barrio que viven en Casa*
 
 ```{r}
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_146 == 5,] %>% 
@@ -264,7 +263,7 @@ ECV_VIVIENDA_BARRIO$p_146 <- ECV_VIVIENDA_BARRIO$p_146 / ECV_VIVIENDA_BARRIO$tot
 colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_146'] <- 'p_146_5'
 ```
 
-Cálculo P_149
+Cálculo P_149. Porcentaje de hogares que toman el agua de entidades prestadoras de servicios p?blicos domiciliarios
 
 ```{r}
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_149 == 1,] %>% 
@@ -312,7 +311,7 @@ if(exists('tmp')) rm(tmp)
 ECV_VIVIENDA_BARRIO$p_SPS <- ECV_VIVIENDA_BARRIO$p_SPS / ECV_VIVIENDA_BARRIO$total
 ```
 
-Cálculo P_178
+Cálculo P_178. Porcentaje de hogares con servicios públicos de Conexión a Internet
 
 ```{r}
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_178 == 1,] %>% 
@@ -326,7 +325,7 @@ if(exists('tmp')) rm(tmp)
 ECV_VIVIENDA_BARRIO$p_178 <- ECV_VIVIENDA_BARRIO$p_178 / ECV_VIVIENDA_BARRIO$total
 ```
 
-*P_226_1*
+*P_226_1. Porcentaje de hogares en arriendo o subarriendo mensual*
 
 ```{r}
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_226 == 1,] %>% 
@@ -342,7 +341,7 @@ ECV_VIVIENDA_BARRIO$p_226 <- ECV_VIVIENDA_BARRIO$p_226 / ECV_VIVIENDA_BARRIO$tot
 colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_226'] <- 'p_226_1'
 ```
 
-*P_226_2*
+*P_226_2. Porcentaje de hogares con propia*
 
 ```{r}
 tmp <- subset(ECV_VIVIENDA, p_226 == 2 | p_226 == 3) %>% 
@@ -358,7 +357,7 @@ ECV_VIVIENDA_BARRIO$p_226 <- ECV_VIVIENDA_BARRIO$p_226 / ECV_VIVIENDA_BARRIO$tot
 colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_226'] <- 'p_226_2'
 ```
 
-*P_226_3*
+*P_226_3. Porcentaje de hogares en otras condiciones*
 
 ```{r}
 tmp <- subset(ECV_VIVIENDA, p_226 == 4 | p_226 == 5 | p_226 == 6) %>% 
@@ -515,9 +514,9 @@ ECV_VIVIENDA_BARRIO[is.na(ECV_VIVIENDA_BARRIO)] <- 0
 Si bien, la mayoria de los indicadores del dataframe ECV_VIVIENDA_BARRIO se encuentran en función de hogares existe un indicador en función de personas del hogar, por lo tanto es necesario poner todos los indicadores en la misma escala
 ```{r}
 #Kmeans no acepta variables categoricas, el identificador del barrio se convierte en nombre de filas para que no sean consideras por el algoritmo
-ECV_VIVIENDA_BARRIO_SCALE <- tibble::column_to_rownames(ECV_VIVIENDA_BARRIO, var = c("comuna","barrio"))
+#ECV_VIVIENDA_BARRIO_SCALE <- tibble::column_to_rownames(ECV_VIVIENDA_BARRIO, var = c("comuna","barrio"))
 
-ECV_VIVIENDA_BARRIO_SCALE <- scale(ECV_VIVIENDA_BARRIO_SCALE)
+#ECV_VIVIENDA_BARRIO_SCALE <- scale(ECV_VIVIENDA_BARRIO_SCALE)
 
 #ECV_VIVIENDA_BARRIO_SCALE <- ECV_VIVIENDA_BARRIO %>% mutate_if(is.numeric,scale)
 ```
@@ -536,27 +535,35 @@ any(is.na(ECV_VIVIENDA_BARRIO_SCALE))
 any(is.finite(ECV_VIVIENDA_BARRIO_SCALE))
 ```
 
-Método del codo para determinar el K óptimo
+Se utilizan el diferentes métodos para determinar el k óptimo del algoritmo de clusterización Kmeans
+
+
+Método del codo 
 
 ```{r}
 fviz_nbclust(ECV_VIVIENDA_BARRIO_SCALE, kmeans, method = "wss") + labs(title= "Número óptimo de Clusters") + xlab("Número de Cluster (K)") 
 ```
 De acuerdo a la gráfica donde se da el cambio de pendiente más significativo es en el k = 7
 
-Método de la siluetta para determinar el k óptimo
+Diferencia entre los errores generados con diferentes k
+
+```{r}
+SS <- fviz_nbclust(ECV_VIVIENDA_BARRIO_SCALE, kmeans, method = "wss")
+plot(2:10,diff(SS$data$y), type = "h", main="Diferencia en errores", xlab="k", ylab="diff") 
+```
+
+Método de la siluetta 
 
 ```{r}
 fviz_nbclust(ECV_VIVIENDA_BARRIO_SCALE, kmeans, method = "silhouette")
 ```
-De acuerdo a la gráfica donde se da el cambio de pendiente más significativo es en el k = 3
 
-
-Aplicación de Kmeans a partir del k recomendado en la gráfica anterior
+De acuerdo a las gráficas de los diferentes metodos, se concluye que k = 3, es el k óptimo para la dimensión vivienda, por lo cual aplicaremos el algoritmo Kmeans con dicho valor de k 
 
 ```{r}
 #[,2:9]
 set.seed(1988)
-kmeans_model <- kmeans(ECV_VIVIENDA_BARRIO_SCALE, 3, nstart = 50)
+kmeans_model <- kmeans(ECV_VIVIENDA_BARRIO[,3:15], 3, nstart = 50)
 kmeans_model
 ```
 El modelo da un ajuste del 60.4% con k = 3, el número de k óptimo tomado de la gráfica del codo y de la silueta 
@@ -566,9 +573,10 @@ Agregar el cluster a la data original
 df_member <- cbind(ECV_VIVIENDA_BARRIO, cluster = kmeans_model$cluster)
 head(df_member)
 ```
+
 Visualización de los grupos
 ```{r}
-fviz_cluster(kmeans_model, data = ECV_VIVIENDA_BARRIO_SCALE)
+fviz_cluster(kmeans_model, data = ECV_VIVIENDA_BARRIO_SCALE, ellipse.type = "norm") + ggtitle("Distribución de los barrios en los clusters")
 
 ```
 Recordemos las indicadores asociados a la dimensión VIVIENDA
@@ -592,22 +600,147 @@ Recordemos las indicadores asociados a la dimensión VIVIENDA
 ```{r}
 df_member[order(df_member$cluster),]
 ```
-```{r}
-df_member[df_member$cluster == 6,]
-```
-Conclusiones grupo 8
-Los barrios que conforman el cluster 8 (Boqueron y La ilusión) se caracterizan por que sus habitantes no llegaron al barrio por problemas de orden púbico, viven en casas, tiene los servicios públicos básicos y ninguno de ellos estan suspendidos, muchos de ellos viven en casa propia
+Análisis para cada uno de los grupos
 
-Conclusiones grupo 7
-Los barrios de este cluster son barrios donde más del 60% de sus habitantes han vivido allí por más de 6 años, más del 20% de los habitantes de estos barrios viven en casas propias y tienen acceso a servicios públicos básicos. 
+*Grupo 1*
 
-Conclusiones grupo 6
 ```{r}
-summary(df_member[df_member$cluster == 6,])
+summary(df_member[df_member$cluster == 1,])
 ```
 
+En promedio hay 2.9 habitantes por hogar en los barrios de este grupo, este grupo de barrios dentro de su población tiene en promedio un 2% de hogares que han llegado  por problemas de orden público, el 65% de los hogares llevan m?s de 6 a?os viviendo en estos barrios y viven mayormente en apartamento, casi siempre propio o arrendado, en donde el agua es tomada de las entidades prestaras de servicios p?blicos y cuenta con acceso a los servicios p?blicos b?sicos. Al menos el 70% de los apartamentos cuentan con acceso a internet. 
 
-En promedio hay más de 3 habitantes por hogar en los barrios de este grupo, al menos el 9% de la población llego al barrio debido problemos de orden público y actualmente viven en apartamento de su propiedad y cuentan con servicios públicos básicos  
+*Grupo 2*
+```{r}
+df_member[df_member$cluster == 2,]
+```
+Barrios con promedio de 4 personas por hogar, al menos el 70% de los hogares han vivido all? por m?s de 6 a?os en sus casas o apartamentos arrendados o propios, cuantan con los servicios p?blicos b?sicos, solo el 9% de ellos tienen suspendido alguno de los servicios , menos del 45% de los hogares de este grupo no tienen internet. 8% de los hogares de este barrio han llegado al sector por problemas de orden p?blico.
+
+*Grupo 3*
+```{r}
+summary(df_member[df_member$cluster == 3,])
+```
+
+Barrios donde predominan las casas, el 80% de los hogares viven en casas, con un promedio de 3.5 habitantes por hogar, sus propiedades en m?s del 60% son propias, no todos los hogares toman el agua de las entidades prestadoras de servicios p?blicos y al menos el 54% de los hogares tienen acceso a los servicios p?blicos b?sicos, muy pocos (6%) de los que tienen acceso a los servicios p?blicos lo tienen suspendido. Solo el 27% de los hogares tienen acceso a internet 
+
+
+An?lisis general de los grupos de acuerdo a las preguntas con mayor incidencia en la Encuesta de Calidad de Vida de Medell?n
+
+```{r}
+df_member %>% select(p_12,cluster) %>% group_by(cluster) %>% summarise(p_12 = mean(p_12)) %>% ungroup() %>% ggplot(aes(x = "", y = p_12, fill = cluster)) + geom_bar(width = 1, stat = "identity") + coord_polar("y", start = 0) + geom_text(aes(label = round(p_12)), position = position_stack(vjust = 0.5)) + labs(x = NULL, y = NULL, fill = NULL, title = "Promedio de personas por hogar") + theme_classic() + theme(axis.line = element_blank(),axis.text = element_blank(), axis.ticks = element_blank(), plot.title = element_text(hjust = 0.5, color = "#666666"))
+```
+
+```{r}
+df_member %>% select(p_146_4,cluster) %>% group_by(cluster) %>% summarise(p_146_4 = mean(p_146_4)) %>% ungroup() %>% ggplot(aes(x = "", y = p_146_4, fill = cluster)) + geom_bar(width = 1, stat = "identity") + coord_polar("y", start = 0) + geom_text(aes(label =  paste0(round(p_146_4*100), "%")), position = position_stack(vjust = 0.5)) + labs(x = NULL, y = NULL, fill = NULL, title = "Hogares que viven en aptos") + theme_classic() + theme(axis.line = element_blank(),axis.text = element_blank(), axis.ticks = element_blank(), plot.title = element_text(hjust = 0.5, color = "#666666"))
+```
+
+```{r}
+df_member %>% select(p_146_5,cluster) %>% group_by(cluster) %>% summarise(p_146_5 = mean(p_146_5)) %>% ungroup() %>% ggplot(aes(x = "", y = p_146_5, fill = cluster)) + geom_bar(width = 1, stat = "identity") + coord_polar("y", start = 0) + geom_text(aes(label =  paste0(round(p_146_5*100), "%")), position = position_stack(vjust = 0.5)) + labs(x = NULL, y = NULL, fill = NULL, title = "Hogares que viven en casas") + theme_classic() + theme(axis.line = element_blank(),axis.text = element_blank(), axis.ticks = element_blank(), plot.title = element_text(hjust = 0.5, color = "#666666"))
+```
+
+```{r}
+df_member %>% select(p_149,cluster) %>% group_by(cluster) %>% summarise(p_149 = mean(p_149)) %>% ungroup() %>% ggplot(aes(x = "", y = p_149, fill = cluster)) + geom_bar(width = 1, stat = "identity") + coord_polar("y", start = 0) + geom_text(aes(label =  paste0(round(p_149*100), "%")), position = position_stack(vjust = 0.5)) + labs(x = NULL, y = NULL, fill = NULL, title = "Hogares con agua desde servicios p?blicos") + theme_classic() + theme(axis.line = element_blank(),axis.text = element_blank(), axis.ticks = element_blank(), plot.title = element_text(hjust = 0.5, color = "#666666"))
+```
+
+```{r}
+df_member %>% select(p_SP,cluster) %>% group_by(cluster) %>% summarise(p_SP = mean(p_SP)) %>% ungroup() %>% ggplot(aes(x = "", y = p_SP, fill = cluster)) + geom_bar(width = 1, stat = "identity") + coord_polar("y", start = 0) + geom_text(aes(label =  paste0(round(p_SP*100), "%")), position = position_stack(vjust = 0.5)) + labs(x = NULL, y = NULL, fill = NULL, title = "Hogares con servicios p?blicos b?sicos") + theme_classic() + theme(axis.line = element_blank(),axis.text = element_blank(), axis.ticks = element_blank(), plot.title = element_text(hjust = 0.5, color = "#666666"))
+```
+```{r}
+df_member %>% select(p_178,cluster) %>% group_by(cluster) %>% summarise(p_178 = mean(p_178)) %>% ungroup() %>% ggplot(aes(x = "", y = p_178, fill = cluster)) + geom_bar(width = 1, stat = "identity") + coord_polar("y", start = 0) + geom_text(aes(label =  paste0(round(p_178*100), "%")), position = position_stack(vjust = 0.5)) + labs(x = NULL, y = NULL, fill = NULL, title = "Hogares con acceso a internet") + theme_classic() + theme(axis.line = element_blank(),axis.text = element_blank(), axis.ticks = element_blank(), plot.title = element_text(hjust = 0.5, color = "#666666"))
+```
+
+```{r}
+df_member %>% select(p_226_1,cluster) %>% group_by(cluster) %>% summarise(p_226_1 = mean(p_226_1)) %>% ungroup() %>% ggplot(aes(x = "", y = p_226_1, fill = cluster)) + geom_bar(width = 1, stat = "identity") + coord_polar("y", start = 0) + geom_text(aes(label =  paste0(round(p_226_1*100), "%")), position = position_stack(vjust = 0.5)) + labs(x = NULL, y = NULL, fill = NULL, title = "Hogares en arriendo o subarriendo") + theme_classic() + theme(axis.line = element_blank(),axis.text = element_blank(), axis.ticks = element_blank(), plot.title = element_text(hjust = 0.5, color = "#666666"))
+```
+```{r}
+df_member %>% select(p_226_2,cluster) %>% group_by(cluster) %>% summarise(p_226_2 = mean(p_226_2)) %>% ungroup() %>% ggplot(aes(x = "", y = p_226_2, fill = cluster)) + geom_bar(width = 1, stat = "identity") + coord_polar("y", start = 0) + geom_text(aes(label =  paste0(round(p_226_2*100), "%")), position = position_stack(vjust = 0.5)) + labs(x = NULL, y = NULL, fill = NULL, title = "Hogares con casa propia") + theme_classic() + theme(axis.line = element_blank(),axis.text = element_blank(), axis.ticks = element_blank(), plot.title = element_text(hjust = 0.5, color = "#666666"))
+```
+
+```{r}
+df_member %>% select(p_226_3,cluster) %>% group_by(cluster) %>% summarise(p_226_3 = mean(p_226_3)) %>% ungroup() %>% ggplot(aes(x = "", y = p_226_3, fill = cluster)) + geom_bar(width = 1, stat = "identity") + coord_polar("y", start = 0) + geom_text(aes(label =  paste0(round(p_226_3*100), "%")), position = position_stack(vjust = 0.5)) + labs(x = NULL, y = NULL, fill = NULL, title = "Hogares que no estan arrendados con propiedad") + theme_classic() + theme(axis.line = element_blank(),axis.text = element_blank(), axis.ticks = element_blank(), plot.title = element_text(hjust = 0.5, color = "#666666"))
+```
+
+Caracteristicas que distinguen un grupo de barrios de otro
+
+ - Grupo 1: se caracterizan por tener menos personas por hogar, viven mayormente en apartamentos propios con acceso a los servicios p?blicos b?sicos e internet 
+ 
+ - Grupo 2: se caracterizan por combinar sus viviendas entre apartamentos y casas
+ 
+ - Grupo 3: se caracterizan por vivir mayoremente en casas propias, el acceso al agua proviene principalmente de otros medios diferentes a las entidades prestadoras de servicios y la gran mayor?a de la poblaci?n no cuenta con servicios p?blicos basicos ni internet 
+
+3. Análisis espacial 
+
+```{r}
+barrios_med = readOGR("./dataSet/Barrio_Vereda/Barrio_Vereda.shp",layer="Barrio_Vereda")
+```
+```{r}
+print(barrios_med@data$NOMBRE)
+```
+
+```{r}
+map = leaflet(barrios_med)
+map = addTiles(map)
+map = addTiles(map)
+colores = sample(x=~cluster, size = length(barrios_med), replace=TRUE)
+map = addPolygons(map, popup = barrios_med, color = colores, addMarkers(popup = ~cluster))
+map
+```
+
+```{r}
+df_member <- df_member[,-1]
+```
+
+```{r}
+prueba <- df_member %>% select(barrio, cluster)
+```
+
+
+```{r}
+barrios <- read.csv("./dataSet/Barrio_Vereda.csv", header = TRUE, sep=",")
+```
+
+```{r}
+barrios$NOMBRE <- toupper(barrios$NOMBRE)
+```
+
+
+```{r}
+nom_bar <- merge(x = barrios_med, y = prueba, by.x="NOMBRE", by.y="barrio", all.x = TRUE)
+
+
+```
+
+```{r}
+bins <- c(0, 10, 20)
+pal <- colorBin("YlOrRd", domain = barrios_med$cluster, bins = bins)
+
+m %>% addPolygons(
+  fillColor = ~pal(cluster),
+  weight = 2,
+  opacity = 1,
+  color = "white",
+  dashArray = "2",
+  fillOpacity = 0.7,
+  highlight = highlightOptions(
+      weight = 5,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE),
+    #label = labels,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto")) %>%
+  addLegend(pal = pal, values = ~cluster, opacity = 0.7, title = NULL,
+    position = "bottomright")
+
+```
+
+
+
+
+
 
 
 
