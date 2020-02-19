@@ -1,0 +1,288 @@
+---
+title: "Agrupamientos de los barrios de Medellín"
+author: "Santiago Arboleda Quiroz, Olga Lucía Montoya Pérez, Alberto Ramirez Velasquez, Juan David Tangarife Patino"
+date: "Semestre 02-2019"
+---
+
+En este trabajo se abordará el problema de agrupar los barrios de Medellín de acuerdo a distintas dimensiones y
+analizar espacialmente las agrupaciones.
+
+
+Librerias escenciales para el analisis de informacion
+```{r}
+library("factoextra")
+library(cluster)
+library(dplyr)
+library(plyr)
+library(ggplot2)
+library(Utiltae)
+library(lazyeval)
+library('sqldf')
+library(GGally)
+library(magrittr)
+library(ggsignif)
+```
+
+El insumo principal de este trabajo son los datos abiertos del portal Medata y en particular la Encuesta de Calidad de Vida Medellín Cómo vamos.
+```{r}
+ECV <- read.csv("./dataSet/encuesta_calidad_vida.csv", header = TRUE, sep=";",encoding = "UTF-8")
+```
+
+Se procede a normalizar las cabeceras del dataframe del set de datos
+```{r}
+ECV <- setNames(ECV,set_dataSet_names(names(ECV)))
+```
+
+1. Caracterización de las dimensiones para la dimensión Empleo
+
+```{r}
+summary(ECV)
+```
+
+Para la dimensión de EMPLEO se toman las preguntas:
+P_69 - ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]
+P_81 - ¿Cuántos meses (número) lleva trabajando en esa empresa o de forma independiente?
+P_85 - A qué actividad específica se dedica principalmente la empresa o negocio en la que realiza su trabajo?
+P_86 - En este trabajo es:
+P_87 - Cuánto ganó el mes pasado en este empleo?
+P_94 - Cuántas horas a la semana trabaja normalmente en ese trabajo- trabajo principal?
+P_95_1 - ¿Cuántos Trabajos?
+P_100 - ¿Desea cambiar el trabajo que tiene actualmente?
+P_101 - ¿Por qué motivos principalmente desea cambiar de trabajo o empleo? Trabajo 1
+P_102 - ¿Por qué motivos principalmente desea cambiar de trabajo o empleo? Trabajo 2
+
+```{r}
+
+ECV_EMPLEO <- ECV[,c("encuesta","persona","comuna","barrio","estrato","p_1","p_69","p_81","p_85","p_86","p_87","p_94","p_95_1","p_100","p_101","p_102")]
+
+```
+
+Revisemos como es el comportamiento de los datos seleccionados
+```{r}
+summary(ECV_EMPLEO)
+```
+
+Dado que para las preguntas seleccionas en la dimension de Empleo (69,81,85,86,87,94,95_1,100,101,102), no fueron contestadas por ningunos de los encuentados del mismo hogar, se descartan esas respuestas para el analisis
+
+```{r}
+ECV_EMPLEO_DEP <- subset(ECV_EMPLEO,p_69 != 'NULL' & p_81 != 'NULL' & p_85 != 'NULL' & p_86 != 'NULL' & p_87 != 'NULL' & p_94 != 'NULL' & p_95_1 != 'NULL' & p_100 != 'NULL' & p_101 != 'NULL' & p_102 != 'NULL')
+nrow(ECV_EMPLEO_DEP)
+```
+```{r}
+summary(ECV_EMPLEO_DEP)
+```
+
+Definiciones:
+
+################################## propuesta Alberto ###################################
+
+p_69: ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]
+Indicador: Porcentaje de personas trabajando y Porcentaje de personas buscando trabajo
+Formula: 
+  CONTEO Trabajando / Totales Encuestados P_69
+  CONTEO Buscando trabajo / Totales Encuestados P_69
+
+```{r}
+ECV_EMPLEO_P69 <- get_indicadores_ei(ECV_EMPLEO_DEP,'p_69')
+#Trabajando
+CONS_P69_1 <- sqldf("SELECT comuna,barrio, cast (SUM(totalRespuestaE) as real)/TotalB AS Ind_69_1
+                 FROM ECV_EMPLEO_P69  
+                 WHERE p_69 = '1'
+                 GROUP BY comuna,barrio")
+#Buscacndo Trabajo
+CONS_P69_2 <- sqldf("SELECT comuna,barrio, cast (SUM(totalRespuestaE) as real)/TotalB AS Ind_69_2
+                 FROM ECV_EMPLEO_P69
+                 WHERE p_69 = '2'
+                 GROUP BY comuna,barrio")
+```
+
+P_81: ¿Cuántos meses (número) lleva trabajando en esa empresa o de forma independiente?
+Indicador: Promedio de meses trabajando x barrio
+Formula: 
+  AVG(Meses)
+
+```{r}
+ECV_EMPLEO_P81 <- get_indicadores_ei(ECV_EMPLEO_DEP,'p_81')
+
+CONS_P81 <- sqldf("SELECT comuna,barrio, AVG(p_81) as Ind_81
+                 FROM ECV_EMPLEO_P81  
+                 WHERE p_81 > 0
+                 GROUP BY comuna,barrio")
+```
+
+P_85: A qué actividad específica se dedica principalmente la empresa o negocio en la que realiza su trabajo?
+Indicador: Porcentaje de personas que trabajan en sector extractivo (mineria y agricultura)
+Formula: 
+  SUM(mineria + agricultura) / total trabajadores
+
+```{r}
+ECV_EMPLEO_P85 <- get_indicadores_ei(ECV_EMPLEO_DEP,'p_85')
+
+CONS_P85 <- sqldf("SELECT comuna,barrio, cast (SUM(totalRespuestaE) as real)/TotalB AS Ind_85
+                 FROM ECV_EMPLEO_P85
+                 WHERE p_85 in ('2','1') and p_85 > 0
+                 GROUP BY comuna,barrio")
+```
+
+P_86: En este trabajo es:
+Indicador: Porcentaje de personas que trabajan sin remuneración
+Formula: 
+  SUM(Trabajador familiar sin remuneracion + Trabajador sin remuneracion en empresas o negocios de otros hogares) / total trabajadores
+
+```{r}
+ECV_EMPLEO_P86 <- get_indicadores_ei(ECV_EMPLEO_DEP,'p_86')
+
+CONS_P86 <- sqldf("SELECT comuna,barrio, cast (SUM(totalRespuestaE) as real)/TotalB AS Ind_86
+                 FROM ECV_EMPLEO_P86
+                 WHERE p_86 in ('6','7') 
+                 GROUP BY comuna,barrio")
+```
+
+P_87: Cuánto ganó el mes pasado en este empleo?
+Indicador: Promedio de salarios x barrio
+Formula: 
+  AVG(Salarios)
+
+```{r}
+ECV_EMPLEO_P87 <- get_indicadores_ei(ECV_EMPLEO_DEP,'p_87')
+
+CONS_P87 <- sqldf("SELECT comuna,barrio, AVG(p_87) Ind_87
+                 FROM ECV_EMPLEO_P87
+                 WHERE p_87 > 0 
+                 GROUP BY comuna,barrio")
+```
+
+P_94:Cuántas horas a la semana trabaja normalmente en ese trabajo- trabajo principal?
+Indicador: Promedio de horas trabajadas x barrio
+Formula: 
+  AVG(Horas)
+
+```{r}
+ECV_EMPLEO_P94 <- get_indicadores_ei(ECV_EMPLEO_DEP,'p_94')
+
+CONS_P94 <- sqldf("SELECT comuna,barrio, AVG(p_94) Ind_94
+                 FROM ECV_EMPLEO_P94
+                 WHERE p_94 > 0 
+                 GROUP BY comuna,barrio")
+```
+
+P_95_1:¿Cuántos Trabajos?
+Indicador: Promedio de trabajos por persona x barrio
+Formula: 
+  AVG(trabajos)
+
+```{r}
+ECV_EMPLEO_P95_1 <- get_indicadores_ei(ECV_EMPLEO_DEP,'p_95_1')
+
+CONS_P95_1 <- sqldf("SELECT comuna,barrio, AVG(p_95_1) Ind_95_1
+                 FROM ECV_EMPLEO_P95_1
+                 WHERE p_95_1 > 0 
+                 GROUP BY comuna,barrio")
+```
+
+P_100:¿Desea cambiar el trabajo que tiene actualmente?
+Indicador: Porcentaje de personas que si quiere cambiar de empleo
+Formula: 
+  SUM(SI/(SI+NO))
+
+```{r}
+ECV_EMPLEO_P100 <- get_indicadores_ei(ECV_EMPLEO_DEP,'p_100')
+
+CONS_P100 <- sqldf("SELECT si.comuna as comuna ,si.barrio as barrio, CAST(TotalSi AS real)/(TotalSi+TotalNo) as Ind_100
+              FROM (SELECT comuna,barrio, SUM(totalRespuestaE) AS TotalSi
+                 FROM ECV_EMPLEO_P100
+                 WHERE p_100 = 1 
+                 GROUP BY comuna,barrio) si
+                 INNER JOIN (SELECT comuna,barrio, SUM(totalRespuestaE) AS TotalNo
+                 FROM ECV_EMPLEO_P100
+                 WHERE p_100 = 2 
+                 GROUP BY comuna,barrio) no
+                 ON si.comuna = no.comuna AND si.barrio = no.barrio
+                 
+                 ")
+```
+
+P_101:¿Por qué motivos principalmente desea cambiar de trabajo o empleo?
+Indicador: Porcentaje de personas que quiere cambiar de empleo para mejorar sus ingresos
+Formula: 
+  SUM(SI/(SI+NO))
+
+```{r}
+ECV_EMPLEO_P101 <- get_indicadores_ei(ECV_EMPLEO_DEP,'p_101')
+
+CONS_P101 <- sqldf("SELECT comuna,barrio, cast (SUM(totalRespuestaE) as real)/TotalB AS Ind_101
+                 FROM ECV_EMPLEO_P101 
+                 WHERE p_101 = '2'
+                 GROUP BY comuna,barrio")
+```
+
+```{r}
+ECV_EMPLEO_F <- merge(x=CONS_P69_1,y=CONS_P69_2,by = c("comuna","barrio"))
+ECV_EMPLEO_F <- merge(x=ECV_EMPLEO_F,y=CONS_P81,by = c("comuna","barrio"))
+ECV_EMPLEO_F <- merge(x=ECV_EMPLEO_F,y=CONS_P85,by = c("comuna","barrio"))
+ECV_EMPLEO_F <- merge(x=ECV_EMPLEO_F,y=CONS_P86,by = c("comuna","barrio"))
+ECV_EMPLEO_F <- merge(x=ECV_EMPLEO_F,y=CONS_P87,by = c("comuna","barrio"))
+ECV_EMPLEO_F <- merge(x=ECV_EMPLEO_F,y=CONS_P94,by = c("comuna","barrio"))
+ECV_EMPLEO_F <- merge(x=ECV_EMPLEO_F,y=CONS_P95_1,by = c("comuna","barrio"))
+ECV_EMPLEO_F <- merge(x=ECV_EMPLEO_F,y=CONS_P100,by = c("comuna","barrio"))
+ECV_EMPLEO_F <- merge(x=ECV_EMPLEO_F,y=CONS_P101,by = c("comuna","barrio"))
+
+
+```
+
+```{r}
+summary(ECV_EMPLEO_F)
+```
+
+```{r}
+
+ECV_EMPLEO_F$barrio <- paste(ECV_EMPLEO_F$comuna,ECV_EMPLEO_F$barrio,sep = "-")
+ECV_EMPLEO_F$comuna <- NULL
+
+ECV_EMPLEO_SCALE <- tibble::column_to_rownames(ECV_EMPLEO_F, var = "barrio")
+ECV_EMPLEO_SCALE <- scale(ECV_EMPLEO_SCALE)
+
+any(is.na(ECV_EMPLEO_SCALE))
+any(is.finite(ECV_EMPLEO_SCALE))
+```
+
+Método del codo para determinar el K óptimo
+
+```{r}
+fviz_nbclust(ECV_EMPLEO_SCALE, kmeans, method = "wss") + labs(title= "Número óptimo de Clusters") + xlab("Número de Cluster (K)") 
+```
+De acuerdo a la gráfica donde se da el cambio de pendiente más significativo es en el k = 5
+
+Método de la siluetta para determinar el k óptimo
+
+```{r}
+fviz_nbclust(ECV_EMPLEO_SCALE, kmeans, method = "silhouette")
+```
+De acuerdo a la gráfica donde se da el cambio de pendiente más significativo es en el k = 3
+
+
+Aplicación de Kmeans a partir del k recomendado en la gráfica anterior
+
+```{r}
+#[,2:9]
+set.seed(1990)
+kmeans_model <- kmeans(ECV_EMPLEO_SCALE, 5, nstart = 50)
+kmeans_model
+```
+Agregar el cluster a la data original
+```{r}
+df_member <- cbind(ECV_EMPLEO_F, cluster = kmeans_model$cluster)
+head(df_member)
+```
+Visualización de los grupos
+```{r}
+#palette=c("red", "blue", "black", "darkgreen")
+# fviz_cluster(kmeans_model, data = ECV_VIVIENDA_BARRIO_SCALE,
+#              ellipse.type = "euclid",
+#              star.plot = T,
+#              repel = T,
+#              ggtheme = theme())
+
+fviz_cluster(kmeans_model, data = ECV_EMPLEO_SCALE)
+
+```
