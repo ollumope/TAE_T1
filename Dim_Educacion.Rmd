@@ -1,0 +1,610 @@
+---
+title: "Dim_Educacion"
+author: "Juan David Tangarife"
+date: "2/15/2020"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Dimensión Educación
+
+Esta dimensión hace parte del estudio de la encuesta de calidad de vida de la alcaldia de Medellín 2018, para este ejercicio se seleccionaron las siguientes preguntas de dicha dimensión para realizar el analisis.
+
+#### Librerias necesarias para el proceso.
+```{r}
+library(Utiltae)
+library(dplyr)
+library(lazyeval)
+library(ggplot2)
+library(gtable)
+library(utils)
+library(knitr)
+library(kableExtra)
+library(lattice)
+```
+
+#### Preparación del DataFrame de Trabajo.
+```{r}
+# Carga de información de encuestas
+ECV <- read.csv("~/Documents/GitHub/TAE_T1/dataSet/encuesta_calidad_vida.csv", sep=";")
+# Cambio de la cabecera de dataFrame por nombras mas legibles.
+ECV <- setNames(ECV, set_dataSet_names(names(ECV)))
+#Selecion de las caracteristicas y preguntas a analizar en el ejercicio.
+ECV_EDUCACION <- ECV[c("encuesta","comuna","barrio","estrato")]
+```
+
+### Desarrollo de las preguntas Dimension Educación
+
+#### p_35
+#### ¿Sabe leer y escribir mas de un parrafo?
+##### Posibles respuestas a la pregunta.
+      * Si <- 1.
+      * No <- 2.
+      
+##### Variable que se desea medir.
+###### Nivel de Analfabetismo en los Barrios de Medellín.
+      
+
+```{r}
+ECV_EDUCACION[,"p_35"] <- as.character(ECV$p_35)
+summary(ECV_EDUCACION)
+
+
+```
+
+Se identifica que la pregunta p_35 en su resumen inicial no tiene valores perdidos, tiene una completitud total.
+
+#### Configuración de indicadores para la pregunta p_35.
+Indicador definido.
+* Indicador 1 Nivel de analfabetismo en barrios de Medellín - k_qtion_2. 
+
+```{r}
+ECV_EDUCACION_KPI <- get_indicadores_ei(ECV_EDUCACION,"p_35")
+ECV_EDUCACION_KPI$k_qtion_2 <- ECV_EDUCACION_KPI$totalRespuestaE / ECV_EDUCACION_KPI$TotalB
+#Seleccionamos en el dataFrame la respuesta 2 donde me da la informacion de analfabetismo
+ECV_EDUCACION_KPI %>% filter(p_35 == '2') -> ECV_EDUCACION_KPI
+```
+Como resultado tenemos que la proporsion del indicador queda de la siguiente forma.
+```{r}
+ECV_EDUCACION_KPI[,c('comuna','barrio','p_35','k_qtion_2')] %>% group_by(comuna,barrio,p_35) %>% summarise(k_35=sum(k_qtion_2)) %>% ungroup() ->ECV_EDUCACION_kp35
+
+head(ECV_EDUCACION_kp35)
+#kable(ECV_EDUCACION_kp35) %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10)
+```
+
+
+
+### Desarrollo de las preguntas Dimension Educación
+
+#### p_37
+#### ¿Estudió durante este año?
+##### Posibles respuestas a la pregunta.
+      * Si <- 1.
+      * No <- 2.
+      * -88 <- No aplica
+      
+##### Variable que se desea medir.
+###### Incremento de nivel educativo.
+
+#### Configuración de indicadores para la pregunta p_37.
+Indicador definido.
+* Indicador 1 Porcentaje de personas que estudiaron en este año.
+```{r}
+rm(ECV_EDUCACION_KPI)
+#Elimino la pregunta anterior
+ECV_EDUCACION$p_35 = NULL
+#Agrego la nuevo progunta al set de datos
+ECV_EDUCACION[,"p_37"] <- as.character(ECV$p_37)
+ECV_EDUCACION %>% group_by(p_37) %>% summarise(cantidad = (n()/nrow(ECV_EDUCACION))*100) %>% ungroup() -> df_prop
+
+```
+Proporsión de la pregunta p_37 con sus posibles respuestas.
+```{r}
+knitr::kable(df_prop, caption = "Distribución pregunta p_37.")
+```
+
+Se encuetra que en la pregunta formulada, existe una gran cantidad de respuestas con la opción -88 (No aplica). Esta respuesta puede terner varias consideraciones :
+  * La persona encuestada, hace parte de las personas que contestaron p_35 como NO.
+  * La persona encuentada, aunque contesto afirmativamente la pregunta p_35, no tiene estudios auque tiene un poco conocimiento en lecto-escritura.
+  
+  Para efectos de esta pregunta en este estudio, se considerá que los encuestados en la p_37 con respuesta -88 se entenderá que no realizá estudios durante el año.
+```{r}
+#Asigno el valor 2 (No realizo estudios en el año) para los valores -88 (No aplica)
+ECV_EDUCACION$p_37[ECV_EDUCACION$p_37 == "-88"] <- '2'
+ECV_EDUCACION %>% group_by(p_37) %>% summarise(cantidad = (n()/nrow(ECV_EDUCACION))*100) %>% ungroup() -> df_prop
+head(df_prop)
+```
+
+#### Generación de Indicadores p_37.
+```{r}
+ECV_EDUCACION_KPI <- get_indicadores_ei(ECV_EDUCACION,"p_37")
+#Filtro los valores donde la respuesta es si.
+ECV_EDUCACION_KPI %>% filter(p_37 == '1') -> ECV_EDUCACION_KPI
+ECV_EDUCACION_KPI$k_qtion_2 <- ECV_EDUCACION_KPI$totalRespuestaE / ECV_EDUCACION_KPI$TotalB
+ECV_EDUCACION_KPI %>% select(comuna,barrio,p_37,k_qtion_2) %>% group_by(comuna,barrio,p_37) %>% summarise(k_37 = sum(k_qtion_2)) %>% ungroup() -> ECV_EDUCACION_kp37
+head(ECV_EDUCACION_kp37)
+```
+### Desarrollo de las preguntas Dimension Educación
+
+#### p_38
+#### ¿cual es la causa principal por la que se salió de estudiar este año?
+##### Posibles respuestas a la pregunta.
+      
+* -99	No responde
+* -88	No aplica
+* 1	Considera que no está en edad escolar
+* 2	Considera que ya terminó sus estudios
+* 3	Los costos educativos elevados o Falta dinero
+* 4	Debe encargarse de los oficios del hogar.
+* 5	Falta de tiempo
+* 6	Por embrazo
+* 7	Por inseguridad en el establecimiento educativo, en el entorno del establecimiento o en el  lugar de residencia
+* 8	Falta de cupos
+* 9	No existe centro educativo cercano. El establecimiento asignado está muy lejano
+* 10	Necesita trabajar
+* 11	No le gusta o no le interesa el estudio
+* 12	Por enfermedad o incapacidad física
+* 13	Necesita educación especial
+* 14	Recibe malos tratos en el colegio
+* 15	Porque se casó o formó pareja
+* 16	Tuvieron que abandonar el lugar de rsidencia habitual
+* 17	Bajo rendimiento académico o indisciplina
+* 18	No pudo conseguir los documentos que exigían
+* 19	Razones familiares
+* 20	Prestar servicio militar
+* 21	Falta de comprensiónn de su identidad étnica (cultura, idioma o lengua)
+* 22	Ingreso a un programa de rehabilitación por consumo de sustancias psicoactivas
+      
+##### Variable que se desea medir.
+###### Motivos de desescolarización.
+
+#### Configuración de indicadores para la pregunta p_38.
+Indicador definido.
+* Indicador 1 Porcentaje de  desescolarización debido a la falta de garantias en barrios de Medellín.
+```{r}
+rm(ECV_EDUCACION_KPI)
+#Elimino la pregunta anterior
+ECV_EDUCACION$p_37 = NULL
+#Agrego la nuevo progunta al set de datos
+ECV_EDUCACION[,"p_38"] <- as.character(ECV$p_38)
+ECV_EDUCACION %>% group_by(p_38) %>% summarise(cantidad = (n()/nrow(ECV_EDUCACION))*100) %>% ungroup() -> df_prop
+```
+Para consolidar la variable en terminos de indicador se consolidaron las repuestas de la pregunta p_38 en los siguientes grupos, adicional las preguntas fueron agrupadas así.
+
+* Otras Actividades - O - (-99,4,5,15,17,18,19,20,22 )
+* No aplica - N - (-88)
+* Motivación - M - (1,2,11)
+* Económico - E - (3,10)
+* Salud - S - (6,12,13)
+* Garantias - G - (7,8,9,14,16,21)
+
+```{r}
+
+ECV_EDUCACION$p_38[ECV_EDUCACION$p_38 == "-88"] <- 'N'
+ECV_EDUCACION$p_38[ECV_EDUCACION$p_38 %in% c("1","2","11")] <- 'M'
+ECV_EDUCACION$p_38[ECV_EDUCACION$p_38 %in% c("3","10")] <- 'E'
+ECV_EDUCACION$p_38[ECV_EDUCACION$p_38 %in% c("6","12","13")] <- 'S'
+ECV_EDUCACION$p_38[ECV_EDUCACION$p_38 %in% c("7","8","9","14","16","21")] <- 'G'
+ECV_EDUCACION$p_38[ECV_EDUCACION$p_38 %in% c("-99","4","5","15","17","18","19","20","22")] <- 'O'
+ECV_EDUCACION %>% group_by(p_38) %>% summarise(cantidad = (n()/nrow(ECV_EDUCACION))*100) %>% ungroup() -> df_prop
+```
+Generación de indicador para la p_38
+```{r}
+ECV_EDUCACION_KPI <- get_indicadores_ei(ECV_EDUCACION,"p_38")
+#Filtrado para indicador de Garantias.
+ECV_EDUCACION_KPI %>% filter(p_38 == "G") -> ECV_EDUCACION_KPI
+ECV_EDUCACION_KPI$k_qtion_2 <- ECV_EDUCACION_KPI$totalRespuestaE / ECV_EDUCACION_KPI$TotalB
+ECV_EDUCACION_KPI %>% select(comuna,barrio,p_38,k_qtion_2) %>% group_by(comuna,barrio,p_38) %>% summarise(k_38 = sum(k_qtion_2)) %>% ungroup() -> ECV_EDUCACION_kp38
+
+head(ECV_EDUCACION_kp38)
+```
+### Desarrollo de las preguntas Dimension Educación
+
+#### p_43
+#### ¿Que medio de transporte utiliza predominantemente para dirigirse a su centro educativo?
+##### Posibles respuestas a la pregunta.
+  * -98	No sabe
+  * -88	No aplica
+  * -77	Otro.
+  * 1	Caminando
+  * 2	Bicicleta
+  * 3	Moto
+  * 4	Bus/Buseta/Ejecutivo
+  * 5	Transporte Informal
+  * 6	Taxi/Colectivo
+  * 7	Transporte Privado
+  * 8	Metro/Cable
+  * 9	Sistema integrado de transporte (SIT).
+  * 10	Caballo (bestia)
+  * 11	Lancha, Canoa, Bote
+      
+##### Variable que se desea medir.
+###### Medio de transporte predominante para dirigirse al centro educativo.
+
+#### Configuración de indicadores para la pregunta p_43.
+Indicador definido.
+* Indicador 1 Porcentaje de estudiantes que utilizan el transporte publico para dirigirse al centro educativo?
+
+```{r}
+if(exists("ECV_EDUCACION_KPI"))rm(ECV_EDUCACION_KPI)
+#Elimino la pregunta anterior
+ECV_EDUCACION$p_38 = NULL
+#Agrego la nuevo progunta al set de datos
+ECV_EDUCACION[,"p_43"] <- as.character(ECV$p_43)
+ECV_EDUCACION %>% group_by(p_43) %>% summarise(cantidad = (n()/nrow(ECV_EDUCACION))*100) %>% ungroup() -> df_prop
+```
+Para consolidar la variable en terminos de indicador se consolidaron las repuestas de la pregunta p_43 en los siguientes grupos, adicional las preguntas fueron agrupadas así.
+
+No sabe	-98 
+No aplica	-88
+Otro.	-77
+Caminando	1
+Privado	2 - (Bicicleta,Moto,Transporte Informal,Transporte Privado)
+Publico	3 - (Bus/Buseta/Ejecutivo,Taxi/Colectivo,Metro/Cable,Sistema integrado de transporte (SIT))
+Animal	4 - Caballo (bestia)
+Fluvial	5 - Lancha, Canoa, Bote
+```{r}
+
+ECV_EDUCACION$p_43[ECV_EDUCACION$p_43 %in% c("2","3","5",'7')] <- '2'
+ECV_EDUCACION$p_43[ECV_EDUCACION$p_43 %in% c("4","6","8","9")] <- '3'
+ECV_EDUCACION$p_43[ECV_EDUCACION$p_43 %in% c("10")] <- '4'
+ECV_EDUCACION$p_43[ECV_EDUCACION$p_43 %in% c("11")] <- '5'
+
+ECV_EDUCACION %>% group_by(p_43) %>% summarise(cantidad = (n()/nrow(ECV_EDUCACION))*100) %>% ungroup() -> df_prop
+df_prop
+```
+Generacion de indicador para p_43.
+```{r}
+ECV_EDUCACION_KPI <- get_indicadores_ei(ECV_EDUCACION,"p_43")
+ECV_EDUCACION_KPI %>% filter(p_43 == '3') -> ECV_EDUCACION_KPI
+ECV_EDUCACION_KPI$k_qtion_2 <- ECV_EDUCACION_KPI$totalRespuestaE / ECV_EDUCACION_KPI$TotalB
+ECV_EDUCACION_KPI %>% select(comuna,barrio,p_43,k_qtion_2) %>% group_by(comuna,barrio,p_43) %>% summarise(k_43 = sum(k_qtion_2)) %>% ungroup() -> ECV_EDUCACION_kp43
+
+head(ECV_EDUCACION_kp43)
+```
+### Desarrollo de las preguntas Dimension Educación
+
+#### p_44
+#### ¿Cuanto tiempo tarda en llegar a su centro educativo?
+##### Posibles respuestas a la pregunta.
+  * -99	No responde
+  * -98	No sabe
+  * -88	No aplica
+  * 1	De 0 a 20 minutos
+  * 2	De 21 a 40 minutos
+  * 3	De 41 a 60 minutos
+  * 4	De 61 a 80 minutos
+  * 5	Más de 81 minutos
+      
+##### Variable que se desea medir.
+###### Rango de tiempo en que se tarda en llegar a un centro educativo por barrio en Medellin.
+
+#### Configuración de indicadores para la pregunta p_44.
+Indicador definido.
+* Indicador 1 Porcentajes de estudiantes que se demoran mas de 41 minutos para llegar a su centro educativo.
+ - k_qtion_2.
+```{r}
+if(exists("ECV_EDUCACION_KPI"))rm(ECV_EDUCACION_KPI)
+#Elimino la pregunta anterior
+ECV_EDUCACION$p_43 = NULL
+#Agrego la nuevo progunta al set de datos
+ECV_EDUCACION[,"p_44"] <- as.character(ECV$p_44)
+ECV_EDUCACION %>% group_by(p_44) %>% summarise(cantidad = (n()/nrow(ECV_EDUCACION))*100) %>% ungroup() -> df_prop
+
+ECV_EDUCACION$p_44[ECV_EDUCACION$p_44 %in% c("-99","-98","-88","1","2")] <- '1'
+ECV_EDUCACION$p_44[ECV_EDUCACION$p_44 %in% c("3","4","5")] <- '2'
+
+```
+Generacio de indicador para p_44
+```{r}
+ECV_EDUCACION_KPI <- get_indicadores_ei(ECV_EDUCACION,"p_44")
+ECV_EDUCACION_KPI %>% filter(p_44 == '2') -> ECV_EDUCACION_KPI
+ECV_EDUCACION_KPI$k_qtion_2 <- ECV_EDUCACION_KPI$totalRespuestaE / ECV_EDUCACION_KPI$TotalB
+ECV_EDUCACION_KPI %>% select(comuna,barrio,p_44,k_qtion_2) %>% group_by(comuna,barrio,p_44) %>% summarise(k_44 = sum(k_qtion_2)) %>% ungroup() -> ECV_EDUCACION_kp44
+
+head(ECV_EDUCACION_kp44)
+```
+
+### Desarrollo de las preguntas Dimension Educación
+
+#### p_45
+#### ¿Último nivel de estudio aprobado (Titulo)?
+##### Posibles respuestas a la pregunta.
+  * -99	No responde
+  * -98	No sabe
+  * 0	Ninguno
+  * 1	Salacuna, Guardería, Preescolar
+  * 2	Primaria
+  * 3	Secundaria
+  * 4	Media académica o Normalista
+  * 5	Media Técnica
+  * 6	Tecnológico
+  * 7	Universidad
+  * 8	Especializacion
+  * 9	Maestria
+      
+##### Variable que se desea medir.
+###### Último titulo obtenido por los encuestados en los barrios de Medellín.
+
+#### Configuración de indicadores para la pregunta p_45.
+Indicador definido.
+* Indicador 1 Porcentaje de personas con educacion superior 6,7,8,9.
+
+```{r}
+if(exists("ECV_EDUCACION_KPI"))rm(ECV_EDUCACION_KPI)
+#Elimino la pregunta anterior
+ECV_EDUCACION$p_44 = NULL
+#Agrego la nuevo progunta al set de datos
+ECV_EDUCACION[,"p_45"] <- as.character(ECV$p_45)
+ECV_EDUCACION %>% group_by(p_45) %>% summarise(cantidad = (n()/nrow(ECV_EDUCACION))*100) %>% ungroup() -> df_prop
+
+ECV_EDUCACION$p_45[ECV_EDUCACION$p_45 %in% c("-99","-98","0","1","2","3","4","5")] <- '1'
+ECV_EDUCACION$p_45[ECV_EDUCACION$p_45 %in% c("6","7","8","9")] <- '2'
+
+```
+Generacio de indicador para p_45
+```{r}
+ECV_EDUCACION_KPI <- get_indicadores_ei(ECV_EDUCACION,"p_45")
+ECV_EDUCACION_KPI %>% filter(p_45 == "2") -> ECV_EDUCACION_KPI
+ECV_EDUCACION_KPI$k_qtion_2 <- ECV_EDUCACION_KPI$totalRespuestaE / ECV_EDUCACION_KPI$TotalB
+ECV_EDUCACION_KPI %>% select(comuna,barrio,p_45,k_qtion_2) %>% group_by(comuna,barrio,p_45) %>% summarise(k_45 = sum(k_qtion_2)) %>% ungroup() -> ECV_EDUCACION_kp45
+
+head(ECV_EDUCACION_kp45)
+```
+
+#### Generación de la tabla final para proceso de Cluster. 
+Union de los indicadores de la dimension.
+
+1. Creo un dataFrame con todos los barrios contenidos en las encuestas.
+```{r}
+
+ECV_FINAL_EDU <- data.frame(unique(ECV_EDUCACION[,c("comuna","barrio")]))
+ECV_FINAL_EDU <- merge(ECV_FINAL_EDU, ECV_EDUCACION_kp35, by=c("comuna","barrio"), all.x = TRUE)
+ECV_FINAL_EDU$p_35 <- NULL
+ECV_FINAL_EDU <- merge(ECV_FINAL_EDU, ECV_EDUCACION_kp37, by=c("comuna","barrio"), all.x = TRUE)
+ECV_FINAL_EDU$p_37 <- NULL
+ECV_FINAL_EDU <- merge(ECV_FINAL_EDU, ECV_EDUCACION_kp38, by=c("comuna","barrio"), all.x = TRUE)
+ECV_FINAL_EDU$p_38 <- NULL
+ECV_FINAL_EDU <- merge(ECV_FINAL_EDU, ECV_EDUCACION_kp43, by=c("comuna","barrio"), all.x = TRUE)
+ECV_FINAL_EDU$p_43 <- NULL
+ECV_FINAL_EDU <- merge(ECV_FINAL_EDU, ECV_EDUCACION_kp44, by=c("comuna","barrio"), all.x = TRUE)
+ECV_FINAL_EDU$p_44 <- NULL
+ECV_FINAL_EDU <- merge(ECV_FINAL_EDU, ECV_EDUCACION_kp45, by=c("comuna","barrio"), all.x = TRUE)
+ECV_FINAL_EDU$p_45 <- NULL
+ECV_FINAL_EDU[is.na(ECV_FINAL_EDU)] <- 0
+head(ECV_FINAL_EDU)
+```
+
+#### Proceso de Normalización de datos para desarrollo de Cluster.
+
+Proceso de escalamiento de datos
+
+```{r}
+ECV_FINAL_EDU$barrio <- paste(ECV_FINAL_EDU$comuna,ECV_FINAL_EDU$barrio,sep = "-")
+ECV_FINAL_EDU$comuna <- NULL
+ECV_FINAL_EDU_SCALE <- tibble::column_to_rownames(ECV_FINAL_EDU, var = "barrio")
+ECV_FINAL_EDU_SCALE <- scale(ECV_FINAL_EDU_SCALE)
+head(ECV_FINAL_EDU_SCALE)
+```
+
+Revisión de missing values
+```{r}
+# Revisa que el dataSet no tenga valores nulos
+any(is.na(head(ECV_FINAL_EDU_SCALE)))
+# Revisa que el dataSet contiene valores finitos, valores que permitan terminar el proceso.
+any(is.finite(ECV_FINAL_EDU_SCALE))
+
+str(ECV_FINAL_EDU_SCALE)
+```
+
+#### Proceso de Cluster K-Means.
+
+##### 1. Proceso de selección del K optimo para la clusterizacion de K-Means.
+```{r}
+library(factoextra)
+library(NbClust)
+
+fviz_nbclust(ECV_FINAL_EDU_SCALE, FUNcluster = kmeans, method =  "wss")
+
+```
+```{r}
+fviz_nbclust(ECV_FINAL_EDU_SCALE, FUNcluster = kmeans, method =  "silhouette")
+```
+
+
+Generacion de los Clusters con el K recomendado.
+```{r}
+library(gridExtra)
+ECV_FINAL_EDU_KMEANS <- ECV_FINAL_EDU
+
+set.seed(1234)
+kmeans_3 <- kmeans(ECV_FINAL_EDU_SCALE, 3, iter.max = 1000, nstart = 10)
+kmeans_4 <- kmeans(ECV_FINAL_EDU_SCALE, 4, iter.max = 1000, nstart = 10)
+kmeans_5 <- kmeans(ECV_FINAL_EDU_SCALE, 5, iter.max = 1000, nstart = 10)
+
+
+g_3 = fviz_cluster(kmeans_3,geom = "point",ECV_FINAL_EDU_SCALE)
+g_4 = fviz_cluster(kmeans_4,geom = "point",ECV_FINAL_EDU_SCALE)
+g_5 = fviz_cluster(kmeans_5,geom = "point",ECV_FINAL_EDU_SCALE)
+
+
+grid.arrange(g_3,g_4,g_5,ncol = 2)
+
+```
+```{r}
+SS <- fviz_nbclust(ECV_FINAL_EDU_SCALE, kmeans, method = "wss")
+plot(2:10,diff(SS$data$y), type = "h", main="Diferencia en errores", xlab="k", ylab="diff")
+```
+
+```{r}
+
+head(ECV_FINAL_EDU_KMEANS)
+
+
+
+ECV_FINAL_EDU_KMEANS$cluster <- kmeans_4$cluster
+
+```
+##Cantidad de Barrios por Cluster.
+#### Cantidad de Barrios para el Cluster 1
+```{r}
+kmeans_4$size[1]
+```
+#### Información del Cluster 1
+
+##### Indicadores claves para analisis.
+
+p_35 Nivel de Analfabetismo en los Barrios de Medellín.
+p_37 Porcentaje de personas que estudiaron en este año.
+p_38 Porcentaje de  desescolarización debido a la falta de garantias en barrios de Medellín.
+p_43 Porcentaje de estudiantes que utilizan el transporte publico para dirigirse al centro educativo?
+p_44 Porcentajes de estudiantes que se demoran mas de 41 minutos para llegar a su centro educativo.
+p_45 Porcentaje de personas con educacion superior
+```{r}
+ECV_FINAL_EDU_KMEANS %>% filter(cluster == '1')
+```
+
+```{r}
+
+
+
+
+
+```
+
+
+#### Grafico para analisis de Cluster.
+p_35 Nivel de Analfabetismo en los Barrios de Medellín.
+p_37 Porcentaje de personas que estudiaron en este año.
+p_38 Porcentaje de  desescolarización debido a la falta de garantias en barrios de Medellín.
+p_43 Porcentaje de estudiantes que utilizan el transporte publico para dirigirse al centro educativo?
+p_44 Porcentajes de estudiantes que se demoran mas de 41 minutos para llegar a su centro educativo.
+p_45 Porcentaje de personas con educacion superior
+
+
+
+```{r}
+
+boxplot(ECV_FINAL_EDU_KMEANS %>% filter(cluster == "1") %>% select(k_35,k_37,k_38,k_43,k_44,k_45), use.cols = TRUE, main="Cluster 1 Dimension Salud", xlab="Preguntas seleccionadas para Dimension Salud")
+```
+Grafico de radar Cluster 1
+```{r}
+ECV_FINAL_EDU_KMEANS %>% group_by(cluster) %>% summarise(k_35=mean(k_35),k_37=mean(k_37),k_38=mean(k_38),k_43=mean(k_43),k_44=mean(k_44),k_45=mean(k_45)) -> ECV_KMEAN_MEDIA
+
+ECV_VAL <- data.frame((t(ECV_KMEAN_MEDIA)))
+ECV_VAL <- setNames(ECV_VAL,c("cluster_1","cluster_2","cluster_3","cluster_4"))
+ECV_VAL <- ECV_VAL[2:7,]
+ECV_VAL %>% tibble::rownames_to_column("pregunta") -> ECV_VAL
+
+ECV_FINAL_EDU_KMEANS %>% group_by(cluster) %>% summarise(k_35=min(k_35),k_37=min(k_37),k_38=min(k_38),k_43=min(k_43),k_44=min(k_44),k_45=min(k_45)) -> ECV_KMEAN_MIN
+
+ECV_VAL_MIN <- data.frame((t(ECV_KMEAN_MIN)))
+ECV_VAL_MIN <- setNames(ECV_VAL_MIN,c("cluster_1","cluster_2","cluster_3","cluster_4"))
+ECV_VAL_MIN <- ECV_VAL_MIN[2:7,]
+ECV_VAL_MIN %>% tibble::rownames_to_column("pregunta") -> ECV_VAL_MIN
+
+ECV_FINAL_EDU_KMEANS %>% group_by(cluster) %>% summarise(k_35=max(k_35),k_37=max(k_37),k_38=max(k_38),k_43=max(k_43),k_44=max(k_44),k_45=max(k_45)) -> ECV_KMEAN_MAX
+
+ECV_VAL_MAX <- data.frame((t(ECV_KMEAN_MAX)))
+ECV_VAL_MAX <- setNames(ECV_VAL_MAX,c("cluster_1","cluster_2","cluster_3","cluster_4"))
+ECV_VAL_MAX <- ECV_VAL_MAX[2:7,]
+ECV_VAL_MAX %>% tibble::rownames_to_column("pregunta") -> ECV_VAL_MAX
+
+
+df_c_1 <- data.frame(ECV_VAL$pregunta,round(ECV_VAL$cluster_1 * 100,digits = 2))
+df_c_1 <- Jmisc::addCol(df_c_1,value="1")
+df_c_1 <- Jmisc::addCol(df_c_1,value="mean")
+df_c_1 <- setNames(df_c_1,c("pregunta","valor","cluster","funcion"))
+df_c_2 <- data.frame(ECV_VAL$pregunta,round(ECV_VAL$cluster_2  * 100, digits = 2))
+df_c_2 <- Jmisc::addCol(df_c_2,value="2")
+df_c_2 <- Jmisc::addCol(df_c_2,value="mean")
+df_c_2 <- setNames(df_c_2,c("pregunta","valor","cluster","funcion"))
+df_c_3 <- data.frame(ECV_VAL$pregunta,round(ECV_VAL$cluster_3  * 100,digits = 2))
+df_c_3 <- Jmisc::addCol(df_c_3,value="3")
+df_c_3 <- Jmisc::addCol(df_c_3,value="mean")
+df_c_3 <- setNames(df_c_3,c("pregunta","valor","cluster","funcion"))
+df_c_4 <- data.frame(ECV_VAL$pregunta,round(ECV_VAL$cluster_4  * 100, digits = 2))
+df_c_4 <-Jmisc::addCol(df_c_4,value="4")
+df_c_4 <- Jmisc::addCol(df_c_4,value="mean")
+df_c_4 <- setNames(df_c_4,c("pregunta","valor","cluster","funcion"))
+ 
+df_c_t <- rbind(df_c_1,df_c_2)
+df_c_t <- rbind(df_c_t,df_c_3)
+df_c_t <- rbind(df_c_t,df_c_4)
+
+df_c_1 <- data.frame(ECV_VAL_MIN$pregunta,round(ECV_VAL_MIN$cluster_1 * 100,digits = 2))
+df_c_1 <- Jmisc::addCol(df_c_1,value="1")
+df_c_1 <- Jmisc::addCol(df_c_1,value="min")
+df_c_1 <- setNames(df_c_1,c("pregunta","valor","cluster","funcion"))
+df_c_2 <- data.frame(ECV_VAL_MIN$pregunta,round(ECV_VAL_MIN$cluster_2  * 100, digits = 2))
+df_c_2 <- Jmisc::addCol(df_c_2,value="2")
+df_c_2 <- Jmisc::addCol(df_c_2,value="min")
+df_c_2 <- setNames(df_c_2,c("pregunta","valor","cluster","funcion"))
+df_c_3 <- data.frame(ECV_VAL_MIN$pregunta,round(ECV_VAL_MIN$cluster_3  * 100,digits = 2))
+df_c_3 <- Jmisc::addCol(df_c_3,value="3")
+df_c_3 <- Jmisc::addCol(df_c_3,value="min")
+df_c_3 <- setNames(df_c_3,c("pregunta","valor","cluster","funcion"))
+df_c_4 <- data.frame(ECV_VAL_MIN$pregunta,round(ECV_VAL_MIN$cluster_4  * 100, digits = 2))
+df_c_4 <-Jmisc::addCol(df_c_4,value="4")
+df_c_4 <- Jmisc::addCol(df_c_4,value="min")
+df_c_4 <- setNames(df_c_4,c("pregunta","valor","cluster","funcion"))
+ 
+df_c_t <- rbind(df_c_t,df_c_1)
+df_c_t <- rbind(df_c_t,df_c_2)
+df_c_t <- rbind(df_c_t,df_c_3)
+df_c_t <- rbind(df_c_t,df_c_4)
+
+df_c_1 <- data.frame(ECV_VAL_MAX$pregunta,round(ECV_VAL_MAX$cluster_1 * 100,digits = 2))
+df_c_1 <- Jmisc::addCol(df_c_1,value="1")
+df_c_1 <- Jmisc::addCol(df_c_1,value="max")
+df_c_1 <- setNames(df_c_1,c("pregunta","valor","cluster","funcion"))
+df_c_2 <- data.frame(ECV_VAL_MAX$pregunta,round(ECV_VAL_MAX$cluster_2  * 100, digits = 2))
+df_c_2 <- Jmisc::addCol(df_c_2,value="2")
+df_c_2 <- Jmisc::addCol(df_c_2,value="max")
+df_c_2 <- setNames(df_c_2,c("pregunta","valor","cluster","funcion"))
+df_c_3 <- data.frame(ECV_VAL_MAX$pregunta,round(ECV_VAL_MAX$cluster_3  * 100,digits = 2))
+df_c_3 <- Jmisc::addCol(df_c_3,value="3")
+df_c_3 <- Jmisc::addCol(df_c_3,value="max")
+df_c_3 <- setNames(df_c_3,c("pregunta","valor","cluster","funcion"))
+df_c_4 <- data.frame(ECV_VAL_MAX$pregunta,round(ECV_VAL_MAX$cluster_4  * 100, digits = 2))
+df_c_4 <-Jmisc::addCol(df_c_4,value="4")
+df_c_4 <- Jmisc::addCol(df_c_4,value="max")
+df_c_4 <- setNames(df_c_4,c("pregunta","valor","cluster","funcion"))
+ 
+df_c_t <- rbind(df_c_t,df_c_1)
+df_c_t <- rbind(df_c_t,df_c_2)
+df_c_t <- rbind(df_c_t,df_c_3)
+df_c_t <- rbind(df_c_t,df_c_4)
+
+r_1 <- ggplot(df_c_t %>% filter(cluster=="1"), aes(x = pregunta, y = valor, col = funcion, group = funcion)) + 
+  geom_polygon(fill = NA) + coord_polar() + labs(title="Cluster 1")
+
+r_2 <- ggplot(df_c_t %>% filter(cluster=="2"), aes(x = pregunta, y = valor, col = funcion, group = funcion)) + 
+  geom_polygon(fill = NA) + coord_polar() + labs(title="Cluster 2")
+
+r_3 <- ggplot(df_c_t %>% filter(cluster=="3"), aes(x = pregunta, y = valor, col = funcion, group = funcion)) + 
+  geom_polygon(fill = NA) + coord_polar() + labs(title="Cluster 3")
+
+r_4 <- ggplot(df_c_t %>% filter(cluster=="4"), aes(x = pregunta, y = valor, col = funcion, group = funcion)) + 
+  geom_polygon(fill = NA) + coord_polar() + labs(title="Cluster 4")
+
+grid.arrange(r_1,r_2,r_3,r_4,ncol = 2)
+
+```
+
+```{r}
+ggplot(df_c_1,aes(x=pregunta, y=valor, fill=cluster)) + geom_bar( stat="identity",position = "stack") 
+
+
+p <-boxplot(ECV_FINAL_EDU_KMEANS %>% filter(cluster == "2") %>% select(k_35,k_37,k_38,k_43,k_44,k_45), use.cols = TRUE, main="Cluster 2 Dimension Salud", xlab="Preguntas seleccionadas para Dimension Salud")
+```
+
+```{r}
+
+boxplot(ECV_FINAL_EDU_KMEANS %>% filter(cluster == "3") %>% select(k_35,k_37,k_38,k_43,k_44,k_45), use.cols = TRUE, main="Cluster 3 Dimension Salud", xlab="Preguntas seleccionadas para Dimension Salud")
+```
+```{r}
+
+boxplot(ECV_FINAL_EDU_KMEANS %>% filter(cluster == "4") %>% select(k_35,k_37,k_38,k_43,k_44,k_45), use.cols = TRUE, main="Cluster 4 Dimension Salud", xlab="Preguntas seleccionadas para Dimension Salud")
+```
