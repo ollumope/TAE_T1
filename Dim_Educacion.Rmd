@@ -484,11 +484,7 @@ p_45 Porcentaje de personas con educacion superior
 
 
 
-```{r}
-
-boxplot(ECV_FINAL_EDU_KMEANS %>% filter(cluster == "1") %>% select(k_35,k_37,k_38,k_43,k_44,k_45), use.cols = TRUE, main="Cluster 1 Dimension Salud", xlab="Preguntas seleccionadas para Dimension Salud")
-```
-Grafico de radar Cluster 1
+#### Grafico de radar Clusters
 ```{r}
 ECV_FINAL_EDU_KMEANS %>% group_by(cluster) %>% summarise(k_35=mean(k_35),k_37=mean(k_37),k_38=mean(k_38),k_43=mean(k_43),k_44=mean(k_44),k_45=mean(k_45)) -> ECV_KMEAN_MEDIA
 
@@ -593,18 +589,9 @@ grid.arrange(r_1,r_2,r_3,r_4,ncol = 2)
 
 ```
 
-```{r}
-ggplot(df_c_1,aes(x=pregunta, y=valor, fill=cluster)) + geom_bar( stat="identity",position = "stack") 
-
-
-p <-boxplot(ECV_FINAL_EDU_KMEANS %>% filter(cluster == "2") %>% select(k_35,k_37,k_38,k_43,k_44,k_45), use.cols = TRUE, main="Cluster 2 Dimension Salud", xlab="Preguntas seleccionadas para Dimension Salud")
-```
+#### Grafico apilado de barras
+Comportamiento de preguntas por cluster
 
 ```{r}
-
-boxplot(ECV_FINAL_EDU_KMEANS %>% filter(cluster == "3") %>% select(k_35,k_37,k_38,k_43,k_44,k_45), use.cols = TRUE, main="Cluster 3 Dimension Salud", xlab="Preguntas seleccionadas para Dimension Salud")
-```
-```{r}
-
-boxplot(ECV_FINAL_EDU_KMEANS %>% filter(cluster == "4") %>% select(k_35,k_37,k_38,k_43,k_44,k_45), use.cols = TRUE, main="Cluster 4 Dimension Salud", xlab="Preguntas seleccionadas para Dimension Salud")
+ggplot(df_c_t,aes(x=pregunta, y=valor, fill=cluster)) + geom_bar( stat="identity",position = "stack") 
 ```
