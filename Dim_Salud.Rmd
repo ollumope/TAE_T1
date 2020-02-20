@@ -1,0 +1,124 @@
+---
+title: "Agrupamientos de los barrios de Medellín"
+author: Santiago Arboleda Quiroz, Olga Lucía Montoya Pérez, Alberto Ramirez Velasquez,
+  Juan David Tangarife Patino
+date: "Semestre 02-2019"
+---
+
+En este trabajo se abordará el problema de agrupar los barrios de Medellín de acuerdo a distintas dimensiones y
+analizar espacialmente las agrupaciones.
+
+**Dimensión Salud**
+
+
+La dimensión de salud mide que tan informados se encuentran las Medellinenses sobre los métodos de planificación familiar y que tanto hacen uso del sistema de salud de la ciudad.
+
+
+```{r}
+ECV_SALUD <- ECV[,c("encuesta","persona","comuna","barrio","estrato","p_15","p_307","p_308","p_324","p_325","p_326","p_327")]
+```
+
+!!!!Existen valores nulos!!!!!
+```{r}
+summary(ECV_SALUD)
+```
+
+Para la el análisis de la dimensión de SALUD en los barrios de Medellín se toman las siguientes preguntas con sus respectivos indicadores:
+
+* P_307 - ¿Considera que tiene suficiente información acerca de los métodos de planificación familiar?
+ * Indicador: Porcentaje de personas que consideran que tienen suficiente información sobre los métodos de planificación familiar
+ * Fórmula: Cantidad de personas que consideran que tienen suficiente información sobre los métodos de planificación familiar / Total de personas encuestadas
+
+P_308 - ¿Usted planifica?
+ * Indicador: Porcentaje de mujeres que planifican (2)	
+ * Fórmula: Cantidad de mujeres que planifican / Total de mujeres encuestadas
+
+P_324 - ¿En los últimos 30 días, tuvo alguna enfermedad, accidente, problema odontológico, o algún otro problema de salud que no haya implicado hospitalización?
+ * Indicador: Porcentaje de personas que en los últimos 30 días han tenido algún problema de salud y no haya necesitado hospitalización
+ * Fórmula: Cantidad de personas que en los últimos 30 días han tenido algún problema de salud y no haya necesitado hospitalización / Total de personas encuestadas
+
+P_325 - ¿Para tratar ese problema de salud, que hizo principalmente?
+ * Indicador: 
+ * Fórmula:
+ 
+P_326 - ¿Cuál fue la principal razón por la que no solicitó o no recibió atención por el problema de salud?
+ * Indicador: 
+ * Fórmula:
+ 
+P_327 - En los últimos 12 meses (en caso de no haberlos utilizado ponga (0) Utilizó los servicios de promoción y prevención
+ * Indicador:
+ * Fórmula:
+ 
+Cálculo Número total de encuestados
+```{r}
+ECV_SALUD_BARRIO <- ECV_SALUD %>% select(encuesta,barrio,persona) %>% 
+                    group_by(encuesta, barrio) %>% 
+                    summarise(total = max(persona)) %>% ungroup() %>% 
+                    group_by(barrio) %>% summarise(total = sum(total)) %>% ungroup()
+```
+
+Cálculo P_307
+
+```{r}
+tmp <- ECV_SALUD[ECV_SALUD$p_307 == 1,] %>% 
+       group_by(encuesta, barrio) %>% summarise(p_307 = sum(p_307)) %>% ungroup() %>%
+       group_by(barrio) %>% summarise(p_307 = sum(p_307)) %>% ungroup()
+
+ECV_SALUD_BARRIO <- merge(x=ECV_SALUD_BARRIO,y=tmp,by="barrio",all.x=TRUE) 
+
+if(exists('tmp')) rm(tmp)
+
+ECV_SALUD_BARRIO$p_307 <- ECV_SALUD_BARRIO$p_307 / ECV_SALUD_BARRIO$total
+```
+
+```{r}
+#write.xlsx(ECV_SALUD[ECV_SALUD$barrio == 'AGUAS FRÍAS',], 'aguasfrias.xlsx')
+```
+
+Cálculo Número total de mujeres encuestadas
+
+```{r}
+tmp <- ECV_SALUD[ECV_SALUD$p_15 == 2,] %>% select(encuesta,barrio,persona) %>% 
+       group_by(encuesta, barrio) %>% summarise(total_mujer = n_distinct(persona)) %>% ungroup() %>% 
+       group_by(barrio) %>% summarise(total_mujer = sum(total_mujer)) %>% ungroup()
+
+ECV_SALUD_BARRIO <- merge(x=ECV_SALUD_BARRIO,y=tmp,by="barrio",all.x=TRUE) 
+
+if(exists('tmp')) rm(tmp)
+
+```
+
+Cálculo P_308
+
+```{r}
+tmp <- subset(ECV_SALUD, p_15 == 2 & p_308 == 1) %>% select(encuesta,barrio,persona) %>% 
+       group_by(encuesta, barrio) %>% summarise(p_308 = max(persona)) %>% ungroup() %>% 
+       group_by(barrio) %>% summarise(p_308 = sum(p_308)) %>% ungroup()
+
+ECV_SALUD_BARRIO <- merge(x=ECV_SALUD_BARRIO,y=tmp,by="barrio",all.x=TRUE) 
+
+if(exists('tmp')) rm(tmp)
+
+ECV_SALUD_BARRIO$p_308 <- ECV_SALUD_BARRIO$p_308 / ECV_SALUD_BARRIO$total_mujer
+```
+
+Cálculo P_324 (1)
+
+```{r}
+tmp <- ECV_SALUD[ECV_SALUD$p_324 == 1,] %>% 
+         group_by(encuesta, barrio)  %>% summarise(p_324 = max(persona)) %>% ungroup() %>%
+         group_by(barrio) %>% summarise(p_324 = sum(p_324)) %>% ungroup()
+
+ECV_SALUD_BARRIO <- merge(x=ECV_SALUD_BARRIO,y=tmp,by="barrio",all.x=TRUE) 
+
+if(exists('tmp')) rm(tmp)
+
+ECV_SALUD_BARRIO$p_324 <- ECV_SALUD_BARRIO$p_324 / ECV_SALUD_BARRIO$total
+```
+
+Depuración de columnas
+
+```{r}
+ECV_SALUD_BARRIO$total <- NULL
+ECV_SALUD_BARRIO$total_mujer <- NULL
+```
