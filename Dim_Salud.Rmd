@@ -121,4 +121,161 @@ Depuración de columnas
 ```{r}
 ECV_SALUD_BARRIO$total <- NULL
 ECV_SALUD_BARRIO$total_mujer <- NULL
+title: "DIM_Salud"
+author: "Juan David Tangarife"
+date: "2/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Dimensión Salud
+
+Esta dimensión hace parte del estudio de la encuesta de calidad de vida de la alcaldia de Medellín 2018, para este ejercicio se seleccionaron las siguientes preguntas de dicha dimensión para realizar el analisis.
+
+#### Librerias necesarias para el proceso.
+```{r}
+library(Utiltae)
+library(dplyr)
+library(lazyeval)
+library(ggplot2)
+library(gtable)
+library(utils)
+library(knitr)
+library(kableExtra)
+```
+
+#### Preparación del DataFrame de Trabajo.
+```{r}
+# Carga de información de encuestas
+ECV <- read.csv("~/Documents/GitHub/TAE_T1/dataSet/encuesta_calidad_vida.csv", sep=";")
+# Cambio de la cabecera de dataFrame por nombras mas legibles.
+ECV <- setNames(ECV, set_dataSet_names(names(ECV)))
+#Selecion de las caracteristicas y preguntas a analizar en el ejercicio.
+ECV_SALUD <- ECV[c("encuesta","comuna","barrio","estrato")]
+```
+
+### Desarrollo de las preguntas Dimension Educación
+
+#### p_325
+#### ¿Para tratar ese problema de salud, que hizo principalmente?
+#### Posibles respuestas a las preguntas.
+    * -99	No responde
+    * -98	No sabe.
+    * -88	No aplica
+    * -77	Otro
+    * 1	Consultó la Red de servicios de salud.
+    * 2	Acudió a una terapia alternativa.
+    * 3	Acudió a un boticario o farmaceuta
+    * 4	Consultó a un tegua, empírico, curandero, yerbatero, comadrona, etc.
+    * 5	Usó remedios caseros
+    * 6	Se automedicó
+    * 7	Nada
+    
+##### Variable que se desea medir.
+###### Porcentaje de personas que consultan a la red de servicios de salud cuando tienes problemas de salud
+
+
+```{r}
+rm(ECV_SALUD_KPI)
+#Elimino la pregunta anterior
+ECV_SALUD$p_324 = NULL
+#Agrego la nuevo progunta al set de datos
+ECV_SALUD[,"p_325"] <- as.character(ECV$p_325)
+ECV_SALUD %>% group_by(p_325) %>% summarise(cantidad = (n()/nrow(ECV_SALUD))) %>% ungroup() -> df_prop
+```
+
+```{r}
+ECV_SALUD_KPI <- get_indicadores_ei(ECV_SALUD,"p_325")
+ECV_SALUD_KPI %>% filter(p_325 == '1') -> ECV_SALUD_KPI
+ECV_SALUD_KPI$k_qtion_2 <- ECV_SALUD_KPI$totalRespuestaE / ECV_SALUD_KPI$TotalB
+ECV_SALUD_KPI %>% select(comuna,barrio,p_325,k_qtion_2) %>% group_by(comuna,barrio,p_325) %>% summarise(k_325 = sum(k_qtion_2)) %>% ungroup() -> ECV_SALUD_kp325
+
+head(ECV_SALUD_kp325)
+```
+
+#### p_326
+#### ¿Cuál fue la principal razón por la que no solicitó o no recibió atención por el problema de salud?
+#### Posibles respuestas a las preguntas.
+  * -99	No responde
+  * -98	No sabe
+  * -88	No aplica
+  * -77	Otro
+  * 1	El caso era leve
+  * 2	No tuvo tiempo
+  * 3	El centro de Atención en salud queda lejos
+  * 4	Falta dinero
+  * 5	Mal servicio o citas distanciadas en el tiempo
+  * 6	No lo atendieron
+  * 7	No confía en los médicos o personal de salud
+  * 8	Consultó antes y no le resolvieron el problema
+  * 9	Muchos trámites para la cita
+    
+##### Variable que se desea medir.
+###### Porcentaje de personas que no solicitaron o no recibieron atencion medica por mal servicio 5,6,7,8.
+
+
+```{r}
+rm(ECV_SALUD_KPI)
+#Elimino la pregunta anterior
+ECV_SALUD$p_325 = NULL
+#Agrego la nuevo progunta al set de datos
+ECV_SALUD[,"p_326"] <- as.character(ECV$p_326)
+ECV_SALUD %>% group_by(p_326) %>% summarise(cantidad = (n()/nrow(ECV_SALUD))) %>% ungroup() -> df_prop
+```
+
+Para desarrollar este indicador se agregaran las siguientes respuestas para contestar dicho indicador
+  * 5	Mal servicio o citas distanciadas en el tiempo
+  * 6	No lo atendieron
+  * 7	No confía en los médicos o personal de salud
+  * 8	Consultó antes y no le resolvieron el problema
+  
+Dichas respuestas se consideran mal servicio.
+```{r}
+ECV_SALUD$p_326[ECV_SALUD$p_326 %in% c("5","6","7","8")] <- '11'
+ECV_SALUD_KPI <- get_indicadores_ei(ECV_SALUD,"p_326")
+ECV_SALUD_KPI %>% filter(p_326 == '11') -> ECV_SALUD_KPI
+ECV_SALUD_KPI$k_qtion_2 <- ECV_SALUD_KPI$totalRespuestaE / ECV_SALUD_KPI$TotalB
+ECV_SALUD_KPI %>% select(comuna,barrio,p_326,k_qtion_2) %>% group_by(comuna,barrio,p_326) %>% summarise(k_326 = sum(k_qtion_2)) %>% ungroup() -> ECV_SALUD_kp326
+
+head(ECV_SALUD_kp326)
+```
+
+
+#### p_327
+#### En los últimos 12 meses (en caso de no haberlos utilizado ponga (0) Utilizó los servicios de promoción y prevención?
+#### Posibles respuestas a las preguntas.
+  * 1 - Si
+  * 2 - No
+    
+##### Variable que se desea medir.
+###### Porcentaje de personas que utilizan servicios de promocion y prevención.
+
+
+```{r}
+rm(ECV_SALUD_KPI)
+#Elimino la pregunta anterior
+ECV_SALUD$p_326 = NULL
+#Agrego la nuevo progunta al set de datos
+ECV_SALUD[,"p_327"] <- as.character(ECV$p_327)
+ECV_SALUD %>% group_by(p_327) %>% summarise(cantidad = (n()/nrow(ECV_SALUD))) %>% ungroup() -> df_prop
+```
+
+Para desarrollar este indicador se agregaran las siguientes respuestas para contestar dicho indicador
+  * 5	Mal servicio o citas distanciadas en el tiempo
+  * 6	No lo atendieron
+  * 7	No confía en los médicos o personal de salud
+  * 8	Consultó antes y no le resolvieron el problema
+  
+Dichas respuestas se consideran mal servicio.
+```{r}
+
+ECV_SALUD_KPI <- get_indicadores_ei(ECV_SALUD,"p_327")
+ECV_SALUD_KPI %>% filter(p_327 == '1') -> ECV_SALUD_KPI
+ECV_SALUD_KPI$k_qtion_2 <- ECV_SALUD_KPI$totalRespuestaE / ECV_SALUD_KPI$TotalB
+ECV_SALUD_KPI %>% select(comuna,barrio,p_327,k_qtion_2) %>% group_by(comuna,barrio,p_327) %>% summarise(k_327 = sum(k_qtion_2)) %>% ungroup() -> ECV_SALUD_kp327
+
+head(ECV_SALUD_kp327)
 ```
