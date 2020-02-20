@@ -1,7 +1,11 @@
 ---
 title: "Agrupamientos de los barrios de Medellín"
-author: "Santiago Arboleda Quiroz, Olga Lucía Montoya Pérez, Alberto Ramirez Velasquez, Juan David Tangarife Patino"
+author: Santiago Arboleda Quiroz, Olga Lucía Montoya Pérez, Alberto Ramirez Velasquez,
+  Juan David Tangarife Patino
 date: "Semestre 02-2019"
+output:
+  html_document:
+    df_print: paged
 ---
 
 En este trabajo se abordará el problema de agrupar los barrios de Medellín de acuerdo a distintas dimensiones y
@@ -312,12 +316,12 @@ head(df_member)
 Visualización de los grupos
 
 ```{r}
-fviz_cluster(kmeans_model, data = ECV_MOVILIDAD_SCALE)
+fviz_cluster(kmeans_model, data = ECV_MOVILIDAD_SCALE, geom = "point")
 ```
 
 
 ```{r}
- fviz_cluster(kmeans_model, ECV_MOVILIDAD_SCALE, ellipse.type = "norm")
+ fviz_cluster(kmeans_model, ECV_MOVILIDAD_SCALE, ellipse.type = "norm", geom = "point")
 ```
 
 ```{r}
@@ -351,7 +355,7 @@ df_member2 <- separate(df_member, 'barrio', paste("barrio", 1:2, sep="_"), sep="
 ```{r}
 barrios_med <- readOGR("Barrio_Vereda/Barrio_Vereda.shp",layer="Barrio_Vereda")
 nombres_barrios <- iconv(barrios_med@data$NOMBRE,"UTF-8","ISO_8859-1")
-head(nombres_barrios)
+#head(nombres_barrios)
 ```
 
 
@@ -363,14 +367,26 @@ sub_ <- df_member2[,c("barrio_2","cluster")]
 
 ```{r}
 rownames(sub_) <- NULL
-head(sub_)
+#head(sub_)
 ```
 
+Convertimos a minúsculas
 
 ```{r}
 sub_$barrio_2 <- tolower(sub_$barrio_2)
+#head(sub_)
+```
+
+```{r}
+#sub_$barrio_2[which(sub_$barrio_2=="º ")] <- "o."
+# Create replacements data frame
+library(DataCombine)
+Replaces <- data.frame(from = c("º ", "ú", "ó", "í", "é", "á", "Á", "ñ"), to = c("o.", "Ãº", "Ã³", "Ã", "Ã©", "Ã¡", "Ã\u0081", "Ã±"))
+sub_ <- FindReplace(data = sub_, Var = "barrio_2", replaceData = Replaces,
+                     from = "from", to = "to", exact = FALSE)
 head(sub_)
 ```
+
 
 ```{r}
 Caps <- function(x) {
@@ -385,17 +401,48 @@ Caps <- function(x) {
 
 
 sub_$barrio_2 <- sapply(sub_$barrio_2, Caps)
-head(sub_)
+#head(sub_)
 ```
-
-
-
 
 
 ```{r}
-#nom_bar <- merge(barrios_med, sub_, by.x="NOMBRE", by.y="barrio_2", duplicateGeoms = T, all.x = TRUE)
-#names(nom_bar)
+sub_$barrio_2[sub_$barrio_2 == "Barrios De JesÃºs"] <- "Barrios de JesÃºs"
+sub_$barrio_2[sub_$barrio_2 == "Piedras Blancas"] <- "Piedras Blancas - Matasano"
+sub_$barrio_2[sub_$barrio_2 == "Area Expansion San Antonio De Prado"] <- "Ã\u0081rea de ExpansiÃ³n San Antonio de Prado"
+sub_$barrio_2[sub_$barrio_2 == "Prado"] <- "San Antonio de Prado"
+sub_$barrio_2[sub_$barrio_2 == "Altavista Central"] <- "Altavista Sector Central"
+sub_$barrio_2[sub_$barrio_2 == "San JosÃ© Del Manzanillo"] <- "San JosÃ© del Manzanillo"
+sub_$barrio_2[sub_$barrio_2 == "El Yolombo"] <- "Yolombo"
+sub_$barrio_2[sub_$barrio_2 == "Urquita"] <- "UrquitÃ¡"
+sub_$barrio_2[sub_$barrio_2 == "Corregimiento Palmitas"] <- "Palmitas Sector Central"
+sub_$barrio_2[sub_$barrio_2 == "San Jose De La MontaÃ±a"] <- "San JosÃ© de La MontaÃ±a"
+sub_$barrio_2[sub_$barrio_2 == "Cabecera San CristÃ³bal"] <- "Cabecera Urbana Corregimiento San CristÃ³bal"
+sub_$barrio_2[sub_$barrio_2 == "Area Expansion Pajarito"] <- "Ãrea de ExpansiÃ³n Pajarito"
+sub_$barrio_2[sub_$barrio_2 == "Area De Expancion San Cristobal"] <- "Ãrea de ExpansiÃ³n San CristÃ³bal"
+sub_$barrio_2[sub_$barrio_2 == "Santa Maria De Los Ã¡ngeles"] <- "Santa MarÃ�a de Los Ãngeles"
+sub_$barrio_2[sub_$barrio_2 == "Juan Pablo Ii"] <- "Parque Juan Pablo II"
+sub_$barrio_2[sub_$barrio_2 == "Bombona No.1"] <- "BombonÃ¡ No.1"
+sub_$barrio_2[sub_$barrio_2 == "Bombona No.2"] <- "BombonÃ¡ No.2"
+sub_$barrio_2[sub_$barrio_2 == "La Asomadera No.1"] <- "Asomadera No.1"
+sub_$barrio_2[sub_$barrio_2 == "La Asomadera No.2"] <- "Asomadera No.2"
+sub_$barrio_2[sub_$barrio_2 == "Los Cerros El Verjel"] <- "Los Cerros El Vergel"
+sub_$barrio_2[sub_$barrio_2 == "Villa Tina"] <- "Villatina"
+sub_$barrio_2[sub_$barrio_2 == "Santa Ines"] <- "Santa InÃ©s"
+sub_$barrio_2[sub_$barrio_2 == "Campo Valdes No.2"] <- "Campo ValdÃ©s No.2"
+sub_$barrio_2[sub_$barrio_2 == "Progreso"] <- "El Progreso"
+sub_$barrio_2[sub_$barrio_2 == "Progreso  no.2"] <- "Progreso No.2"
+sub_$barrio_2[sub_$barrio_2 == "Doce De Octubre No.1"] <- "Doce de Octubre No.1"
+sub_$barrio_2[sub_$barrio_2 == "Doce De Octubre No.2"] <- "Doce de Octubre No.2"
+sub_$barrio_2[sub_$barrio_2 == "Santo Domingo Sabio No.1"] <- "Santo Domingo Savio No.1"
+sub_$barrio_2[sub_$barrio_2 == "Santo Domingo Sabio No.2"] <- "Santo Domingo Savio No.2"
+sub_$barrio_2[sub_$barrio_2 == "Moscu No.1"] <- "MoscÃº No.1"
+sub_$barrio_2[sub_$barrio_2 == "Moscu No.2"] <- "MoscÃº No.2"
+sub_$barrio_2[sub_$barrio_2 == "San Josela Cima No.1"] <- "San JosÃ© La Cima No.1"
+sub_$barrio_2[sub_$barrio_2 == "San Jose La Cima No.2"] <- "San JosÃ© La Cima No.2"
+sub_$barrio_2[sub_$barrio_2 == "Villa Del Socorro"] <- "Villa del Socorro"
+sub_$barrio_2[sub_$barrio_2 == "Andalucia"] <- "AndalucÃ�a"
 ```
+
 
 ```{r}
 library(dplyr)
@@ -409,7 +456,8 @@ names(nom_bar)
 
 
 ```{r}
-head(nom_bar)
+nombres <- data.frame(nom_bar$NOMBRE)
+print(sum(is.na(nom_bar$cluster)))
 ```
 
 
@@ -417,6 +465,7 @@ head(nom_bar)
 
 
 ```{r}
+library(leaflet)
 m <-leaflet(nom_bar)
 #factpal <- colorFactor(topo.colors(4), nom_bar$cluster)
 factpal <- colorFactor(palette = c("blue", "yellow", "green", "red","purple"), levels = c("1", "2", "3", "4", "5"))
@@ -426,35 +475,5 @@ m
 ```
 
 
-```{r}
-
-```
-
-```{r}
-
-```
-
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-
-```{r}
-
-```
 
 
