@@ -12,6 +12,36 @@ En este trabajo se abordará el problema de agrupar los barrios de Medellín de 
 analizar espacialmente las agrupaciones.
 
 
+** Dimensión Movilidad **
+
+La dimensión Movilidad mide determina en la encuesta de Calidad de Vida, cómo se mueven los Medellinenses. Asi mismo, el tiempo que les toma ir a trabajar, el medio de transporte predominante de las personas que trabajan y la percepción sobre la malla vial, cobertura y calidad del transporte público.
+
+
+
+* P_83		¿Cuál es el medio de transporte utilizado predominante para dirigirse al sitio de su empleo principal?
+  * Indicador: Porcentaje de personas que usan bicicleta para ir a su empleo principal
+  * Formula: Número de personas que usan bicicleta para ir a trabajar / Total Encuestados 
+  
+  
+* P_84		¿Cuánto tiempo tardan en llegar al sitio de trabajo?
+  * Indicador: Porcentaje de personas que tardan en llegar al trabajo mas de una hora
+  * Formula: Numero de personas que tardan mas de una hora para ir a trabajar / Cantidad Encuestados
+  
+  
+* P_212		¿Cuántos vehículos particulares en funcionamiento tiene este hogar? (no incluye vehículo de servicio público o utilizado para generar ingresos) Vehiculo o auto
+
+  * Indicador: Promedio de vehiculos en el hogar (Vehiculo o auto)
+  * Formula: Cantidad de Vehiculos en los hogares / Cantidad de hogares
+
+
+
+* P_213		¿Cuántos vehículos particulares en funcionamiento tiene este hogar? (no incluye vehículo de servicio público o utilizado para generar ingresos) Moto o motoneta
+* P_214		¿Cuántos vehículos particulares en funcionamiento tiene este hogar? (no incluye vehículo de servicio público o utilizado para generar ingresos) Bicicleta
+* P_318		Califique Usted en una escala desde 1 hasta 5, la situación en su barrio o vereda, sobre: La pavimentación y señalización de las vias
+* P_321		Califique Usted, en una escala desde 1 hasta 5, la cobertura en el transporte público en su sector, barrio o vereda en los últimos 12 meses
+* P_322		Y califique en una escala desde 1 hasta 5, la calidad de ese transporte público en su sector, barrio o vereda
+
+
 Librerias escenciales para el analisis de informacion
 ```{r}
 library(dplyr)
@@ -40,7 +70,7 @@ ECV <- setNames(ECV,set_dataSet_names(names(ECV)))
 
 
 ```{r}
-summary(ECV)
+#summary(ECV)
 ```
 
 Para la dimensión de MOVILIDAD  se toman las preguntas:
@@ -419,7 +449,7 @@ sub_$barrio_2[sub_$barrio_2 == "San Jose De La MontaÃ±a"] <- "San JosÃ© de L
 sub_$barrio_2[sub_$barrio_2 == "Cabecera San CristÃ³bal"] <- "Cabecera Urbana Corregimiento San CristÃ³bal"
 sub_$barrio_2[sub_$barrio_2 == "Area Expansion Pajarito"] <- "Ãrea de ExpansiÃ³n Pajarito"
 sub_$barrio_2[sub_$barrio_2 == "Area De Expancion San Cristobal"] <- "Ãrea de ExpansiÃ³n San CristÃ³bal"
-sub_$barrio_2[sub_$barrio_2 == "Santa Maria De Los Ã¡ngeles"] <- "Santa MarÃ�a de Los Ãngeles"
+sub_$barrio_2[sub_$barrio_2 == "Santa Maria De Los Ã¡ngeles"] <- "Santa MarÃ�a de Los Ãngeles"
 sub_$barrio_2[sub_$barrio_2 == "Juan Pablo Ii"] <- "Parque Juan Pablo II"
 sub_$barrio_2[sub_$barrio_2 == "Bombona No.1"] <- "BombonÃ¡ No.1"
 sub_$barrio_2[sub_$barrio_2 == "Bombona No.2"] <- "BombonÃ¡ No.2"
@@ -440,7 +470,19 @@ sub_$barrio_2[sub_$barrio_2 == "Moscu No.2"] <- "MoscÃº No.2"
 sub_$barrio_2[sub_$barrio_2 == "San Josela Cima No.1"] <- "San JosÃ© La Cima No.1"
 sub_$barrio_2[sub_$barrio_2 == "San Jose La Cima No.2"] <- "San JosÃ© La Cima No.2"
 sub_$barrio_2[sub_$barrio_2 == "Villa Del Socorro"] <- "Villa del Socorro"
-sub_$barrio_2[sub_$barrio_2 == "Andalucia"] <- "AndalucÃ�a"
+sub_$barrio_2[sub_$barrio_2 == "El Playon De Los Comuneros"] <- "PlayÃ³n de Los Comuneros"
+sub_$barrio_2[sub_$barrio_2 == "Santa Fe"] <- "Santa FÃ©"
+sub_$barrio_2[sub_$barrio_2 == "Santa Rosa De Lima"] <- "Santa Rosa de Lima"
+sub_$barrio_2[sub_$barrio_2 == "Alejandro EchavarrÃa"] <- "Alejandro EchavarrÃ�a"
+sub_$barrio_2[sub_$barrio_2 == "Mira Flores"] <- "Miraflores"
+sub_$barrio_2[sub_$barrio_2 == "Ocho De Marzo"] <- "Ocho de Marzo"
+sub_$barrio_2[sub_$barrio_2 == "Villa Lilliam"] <- "Villa Liliam"
+sub_$barrio_2[sub_$barrio_2 == "Altos Del Poblado"] <- "Altos del Poblado"
+sub_$barrio_2[sub_$barrio_2 == "Villa Lilliam"] <- "Villa Liliam"
+sub_$barrio_2[sub_$barrio_2 == "La Loma De Los Bernal"] <- "La Loma de Los Bernal"
+sub_$barrio_2[sub_$barrio_2 == "Ã¡rea De ExpansiÃ³n BelÃ©n RincÃ³n"] <- "Ãrea de ExpansiÃ³n BelÃ©n RincÃ³n"
+sub_$barrio_2[sub_$barrio_2 == "Carlos E Restrepo"] <- "Carlos E. Restrepo"
+sub_$barrio_2[sub_$barrio_2 == "Ã¡rea De ExpansiÃ³n BelÃ©n RincÃ³n"] <- "Ãrea de ExpansiÃ³n BelÃ©n RincÃ³n"
 ```
 
 
