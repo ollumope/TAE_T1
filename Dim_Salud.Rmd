@@ -7,6 +7,11 @@ date: "Semestre 02-2019"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+```{r include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
 En este trabajo se abordará el problema de agrupar los barrios de Medellín de acuerdo a distintas dimensiones y
 analizar espacialmente las agrupaciones.
 
