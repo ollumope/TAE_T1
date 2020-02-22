@@ -1,18 +1,23 @@
 ---
 title: "Dim_Educacion"
-author: "Juan David Tangarife"
+author: "Olga Lucia Montoya,Santiago Arboleda, Alberto Ramirez, Juan David Tangarife"
 date: "2/15/2020"
 output: html_document
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+```{r include = FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+```
+
 ## Dimensión Educación
 
 Esta dimensión hace parte del estudio de la encuesta de calidad de vida de la alcaldia de Medellín 2018, para este ejercicio se seleccionaron las siguientes preguntas de dicha dimensión para realizar el analisis.
 
-#### Librerias necesarias para el proceso.
-```{r}
+
+```{r results='hide', message=FALSE, warning=FALSE}
 library(Utiltae)
 library(dplyr)
 library(lazyeval)
@@ -22,10 +27,16 @@ library(utils)
 library(knitr)
 library(kableExtra)
 library(lattice)
+library(factoextra)
+library(NbClust)
+library(gridExtra)
+library(stats)
 ```
 
-#### Preparación del DataFrame de Trabajo.
+
 ```{r}
+# Preparación del DataFrame de Trabajo.
+
 # Carga de información de encuestas
 ECV <- read.csv("~/Documents/GitHub/TAE_T1/dataSet/encuesta_calidad_vida.csv", sep=";")
 # Cambio de la cabecera de dataFrame por nombras mas legibles.
@@ -36,20 +47,17 @@ ECV_EDUCACION <- ECV[c("encuesta","comuna","barrio","estrato")]
 
 ### Desarrollo de las preguntas Dimension Educación
 
-#### p_35
+### Pregunta de la encuesta p_35
 #### ¿Sabe leer y escribir mas de un parrafo?
 ##### Posibles respuestas a la pregunta.
       * Si <- 1.
       * No <- 2.
-      
 ##### Variable que se desea medir.
 ###### Nivel de Analfabetismo en los Barrios de Medellín.
       
 
 ```{r}
 ECV_EDUCACION[,"p_35"] <- as.character(ECV$p_35)
-summary(ECV_EDUCACION)
-
 
 ```
 
@@ -57,16 +65,15 @@ Se identifica que la pregunta p_35 en su resumen inicial no tiene valores perdid
 
 #### Configuración de indicadores para la pregunta p_35.
 Indicador definido.
-* Indicador 1 Nivel de analfabetismo en barrios de Medellín - k_qtion_2. 
+* Indicador. Nivel de analfabetismo en barrios de Medellín. 
+* Nivel de analfabetismo = Respuestas en 2 por Barrio / Total encuestados en el Barrio.
 
 ```{r}
 ECV_EDUCACION_KPI <- get_indicadores_ei(ECV_EDUCACION,"p_35")
 ECV_EDUCACION_KPI$k_qtion_2 <- ECV_EDUCACION_KPI$totalRespuestaE / ECV_EDUCACION_KPI$TotalB
 #Seleccionamos en el dataFrame la respuesta 2 donde me da la informacion de analfabetismo
 ECV_EDUCACION_KPI %>% filter(p_35 == '2') -> ECV_EDUCACION_KPI
-```
-Como resultado tenemos que la proporsion del indicador queda de la siguiente forma.
-```{r}
+
 ECV_EDUCACION_KPI[,c('comuna','barrio','p_35','k_qtion_2')] %>% group_by(comuna,barrio,p_35) %>% summarise(k_35=sum(k_qtion_2)) %>% ungroup() ->ECV_EDUCACION_kp35
 
 head(ECV_EDUCACION_kp35)
@@ -75,9 +82,8 @@ head(ECV_EDUCACION_kp35)
 
 
 
-### Desarrollo de las preguntas Dimension Educación
 
-#### p_37
+### Pregunta de la encuesta p_37
 #### ¿Estudió durante este año?
 ##### Posibles respuestas a la pregunta.
       * Si <- 1.
@@ -85,11 +91,13 @@ head(ECV_EDUCACION_kp35)
       * -88 <- No aplica
       
 ##### Variable que se desea medir.
-###### Incremento de nivel educativo.
+###### Indicador:
+###### Porcentaje de personas que estudiaron en este año.
+###### Formula : 
+###### Total de encuentas que respondieron 1 (Si) / Total de encuentas por Barrio
 
-#### Configuración de indicadores para la pregunta p_37.
 Indicador definido.
-* Indicador 1 Porcentaje de personas que estudiaron en este año.
+* Indicador 1 
 ```{r}
 rm(ECV_EDUCACION_KPI)
 #Elimino la pregunta anterior
@@ -101,7 +109,7 @@ ECV_EDUCACION %>% group_by(p_37) %>% summarise(cantidad = (n()/nrow(ECV_EDUCACIO
 ```
 Proporsión de la pregunta p_37 con sus posibles respuestas.
 ```{r}
-knitr::kable(df_prop, caption = "Distribución pregunta p_37.")
+head(df_prop)
 ```
 
 Se encuetra que en la pregunta formulada, existe una gran cantidad de respuestas con la opción -88 (No aplica). Esta respuesta puede terner varias consideraciones :
@@ -109,6 +117,7 @@ Se encuetra que en la pregunta formulada, existe una gran cantidad de respuestas
   * La persona encuentada, aunque contesto afirmativamente la pregunta p_35, no tiene estudios auque tiene un poco conocimiento en lecto-escritura.
   
   Para efectos de esta pregunta en este estudio, se considerá que los encuestados en la p_37 con respuesta -88 se entenderá que no realizá estudios durante el año.
+  
 ```{r}
 #Asigno el valor 2 (No realizo estudios en el año) para los valores -88 (No aplica)
 ECV_EDUCACION$p_37[ECV_EDUCACION$p_37 == "-88"] <- '2'
@@ -125,9 +134,8 @@ ECV_EDUCACION_KPI$k_qtion_2 <- ECV_EDUCACION_KPI$totalRespuestaE / ECV_EDUCACION
 ECV_EDUCACION_KPI %>% select(comuna,barrio,p_37,k_qtion_2) %>% group_by(comuna,barrio,p_37) %>% summarise(k_37 = sum(k_qtion_2)) %>% ungroup() -> ECV_EDUCACION_kp37
 head(ECV_EDUCACION_kp37)
 ```
-### Desarrollo de las preguntas Dimension Educación
 
-#### p_38
+### Pregunta de la encuesta p_38.
 #### ¿cual es la causa principal por la que se salió de estudiar este año?
 ##### Posibles respuestas a la pregunta.
       
@@ -156,12 +164,11 @@ head(ECV_EDUCACION_kp37)
 * 21	Falta de comprensiónn de su identidad étnica (cultura, idioma o lengua)
 * 22	Ingreso a un programa de rehabilitación por consumo de sustancias psicoactivas
       
-##### Variable que se desea medir.
-###### Motivos de desescolarización.
 
-#### Configuración de indicadores para la pregunta p_38.
-Indicador definido.
+####Indicador definido.
 * Indicador 1 Porcentaje de  desescolarización debido a la falta de garantias en barrios de Medellín.
+* Formula del indicador:
+* Numero de encuestas con respuestas orientadas a la falta de garantias / Total encuestados en Barrios
 ```{r}
 rm(ECV_EDUCACION_KPI)
 #Elimino la pregunta anterior
@@ -199,9 +206,8 @@ ECV_EDUCACION_KPI %>% select(comuna,barrio,p_38,k_qtion_2) %>% group_by(comuna,b
 
 head(ECV_EDUCACION_kp38)
 ```
-### Desarrollo de las preguntas Dimension Educación
 
-#### p_43
+#### Pregunta de la encuesta p_43.
 #### ¿Que medio de transporte utiliza predominantemente para dirigirse a su centro educativo?
 ##### Posibles respuestas a la pregunta.
   * -98	No sabe
@@ -219,12 +225,10 @@ head(ECV_EDUCACION_kp38)
   * 10	Caballo (bestia)
   * 11	Lancha, Canoa, Bote
       
-##### Variable que se desea medir.
-###### Medio de transporte predominante para dirigirse al centro educativo.
-
-#### Configuración de indicadores para la pregunta p_43.
-Indicador definido.
-* Indicador 1 Porcentaje de estudiantes que utilizan el transporte publico para dirigirse al centro educativo?
+#### Variable que se desea medir.
+##### Indicador definido.
+##### Indicador 1 Porcentaje de estudiantes que utilizan el transporte publico para dirigirse al centro educativo?
+#####  Numero de encuestas que responden que utiliza servicio publico / Total por Barrio
 
 ```{r}
 if(exists("ECV_EDUCACION_KPI"))rm(ECV_EDUCACION_KPI)
@@ -232,18 +236,18 @@ if(exists("ECV_EDUCACION_KPI"))rm(ECV_EDUCACION_KPI)
 ECV_EDUCACION$p_38 = NULL
 #Agrego la nuevo progunta al set de datos
 ECV_EDUCACION[,"p_43"] <- as.character(ECV$p_43)
-ECV_EDUCACION %>% group_by(p_43) %>% summarise(cantidad = (n()/nrow(ECV_EDUCACION))*100) %>% ungroup() -> df_prop
+#ECV_EDUCACION %>% group_by(p_43) %>% summarise(cantidad = (n()/nrow(ECV_EDUCACION))*100) %>% ungroup() -> df_prop
 ```
-Para consolidar la variable en terminos de indicador se consolidaron las repuestas de la pregunta p_43 en los siguientes grupos, adicional las preguntas fueron agrupadas así.
+##### Para consolidar la variable en terminos de indicador se consolidaron las repuestas de la pregunta p_43 en los ##### siguientes grupos, adicional las preguntas fueron agrupadas así.
 
-No sabe	-98 
-No aplica	-88
-Otro.	-77
-Caminando	1
-Privado	2 - (Bicicleta,Moto,Transporte Informal,Transporte Privado)
-Publico	3 - (Bus/Buseta/Ejecutivo,Taxi/Colectivo,Metro/Cable,Sistema integrado de transporte (SIT))
-Animal	4 - Caballo (bestia)
-Fluvial	5 - Lancha, Canoa, Bote
+  * No sabe	-98 
+  * No aplica	-88
+  * Otro.	-77
+  * Caminando	1
+  * Privado	2 - (Bicicleta,Moto,Transporte Informal,Transporte Privado)
+  * Publico	3 - (Bus/Buseta/Ejecutivo,Taxi/Colectivo,Metro/Cable,Sistema integrado de transporte (SIT))
+  * Animal	4 - Caballo (bestia)
+  * Fluvial	5 - Lancha, Canoa, Bote
 ```{r}
 
 ECV_EDUCACION$p_43[ECV_EDUCACION$p_43 %in% c("2","3","5",'7')] <- '2'
@@ -251,10 +255,10 @@ ECV_EDUCACION$p_43[ECV_EDUCACION$p_43 %in% c("4","6","8","9")] <- '3'
 ECV_EDUCACION$p_43[ECV_EDUCACION$p_43 %in% c("10")] <- '4'
 ECV_EDUCACION$p_43[ECV_EDUCACION$p_43 %in% c("11")] <- '5'
 
-ECV_EDUCACION %>% group_by(p_43) %>% summarise(cantidad = (n()/nrow(ECV_EDUCACION))*100) %>% ungroup() -> df_prop
-df_prop
+#ECV_EDUCACION %>% group_by(p_43) %>% summarise(cantidad = (n()/nrow(ECV_EDUCACION))*100) %>% ungroup() -> df_prop
+
 ```
-Generacion de indicador para p_43.
+
 ```{r}
 ECV_EDUCACION_KPI <- get_indicadores_ei(ECV_EDUCACION,"p_43")
 ECV_EDUCACION_KPI %>% filter(p_43 == '3') -> ECV_EDUCACION_KPI
@@ -263,7 +267,7 @@ ECV_EDUCACION_KPI %>% select(comuna,barrio,p_43,k_qtion_2) %>% group_by(comuna,b
 
 head(ECV_EDUCACION_kp43)
 ```
-### Desarrollo de las preguntas Dimension Educación
+
 
 #### p_44
 #### ¿Cuanto tiempo tarda en llegar a su centro educativo?
@@ -381,110 +385,73 @@ head(ECV_FINAL_EDU)
 Proceso de escalamiento de datos
 
 ```{r}
-ECV_FINAL_EDU$barrio <- paste(ECV_FINAL_EDU$comuna,ECV_FINAL_EDU$barrio,sep = "-")
+ECV_FINAL_EDU$barrio <- paste(ECV_FINAL_EDU$comuna,ECV_FINAL_EDU$barrio,sep = "/")
 ECV_FINAL_EDU$comuna <- NULL
+#ECV_FINAL_EDU$k_38 <- NULL
 ECV_FINAL_EDU_SCALE <- tibble::column_to_rownames(ECV_FINAL_EDU, var = "barrio")
 ECV_FINAL_EDU_SCALE <- scale(ECV_FINAL_EDU_SCALE)
 head(ECV_FINAL_EDU_SCALE)
-```
 
-Revisión de missing values
-```{r}
-# Revisa que el dataSet no tenga valores nulos
-any(is.na(head(ECV_FINAL_EDU_SCALE)))
-# Revisa que el dataSet contiene valores finitos, valores que permitan terminar el proceso.
-any(is.finite(ECV_FINAL_EDU_SCALE))
-
-str(ECV_FINAL_EDU_SCALE)
 ```
 
 #### Proceso de Cluster K-Means.
 
 ##### 1. Proceso de selección del K optimo para la clusterizacion de K-Means.
 ```{r}
-library(factoextra)
-library(NbClust)
+
 
 fviz_nbclust(ECV_FINAL_EDU_SCALE, FUNcluster = kmeans, method =  "wss")
 
-```
-```{r}
 fviz_nbclust(ECV_FINAL_EDU_SCALE, FUNcluster = kmeans, method =  "silhouette")
 ```
 
+#### Diferencia de los errores
 
-Generacion de los Clusters con el K recomendado.
-```{r}
-library(gridExtra)
-ECV_FINAL_EDU_KMEANS <- ECV_FINAL_EDU
-
-set.seed(1234)
-kmeans_3 <- kmeans(ECV_FINAL_EDU_SCALE, 3, iter.max = 1000, nstart = 10)
-kmeans_4 <- kmeans(ECV_FINAL_EDU_SCALE, 4, iter.max = 1000, nstart = 10)
-kmeans_5 <- kmeans(ECV_FINAL_EDU_SCALE, 5, iter.max = 1000, nstart = 10)
-
-
-g_3 = fviz_cluster(kmeans_3,geom = "point",ECV_FINAL_EDU_SCALE)
-g_4 = fviz_cluster(kmeans_4,geom = "point",ECV_FINAL_EDU_SCALE)
-g_5 = fviz_cluster(kmeans_5,geom = "point",ECV_FINAL_EDU_SCALE)
-
-
-grid.arrange(g_3,g_4,g_5,ncol = 2)
-
-```
 ```{r}
 SS <- fviz_nbclust(ECV_FINAL_EDU_SCALE, kmeans, method = "wss")
 plot(2:10,diff(SS$data$y), type = "h", main="Diferencia en errores", xlab="k", ylab="diff")
 ```
 
+### Generacion de los Clusters con el K recomendado.
+
+##### Como se identifica en la grafica del codo y la de siluetas, el K optimo para generar las agrupaciones en el metodo K-means es 4.
+
+
 ```{r}
 
-head(ECV_FINAL_EDU_KMEANS)
+
+ECV_FINAL_EDU_KMEANS <- ECV_FINAL_EDU
+set.seed(1234)
+kmeans_3 <- kmeans(ECV_FINAL_EDU_SCALE, 3, iter.max = 1000, nstart = 10)
+kmeans_4 <- kmeans(ECV_FINAL_EDU_SCALE, 4, iter.max = 1000, nstart = 10)
+kmeans_5 <- kmeans(ECV_FINAL_EDU_SCALE, 5, iter.max = 1000, nstart = 10)
+
+#g_3 = fviz_cluster(kmeans_3,geom = "point",ECV_FINAL_EDU_SCALE) + theme_bw()
+#g_4 = fviz_cluster(kmeans_4,geom = "point",ECV_FINAL_EDU_SCALE) + theme_bw()
+#g_5 = fviz_cluster(kmeans_5,geom = "point",ECV_FINAL_EDU_SCALE) + theme_bw()
+#grid.arrange(g_3,g_4,g_5,ncol = 2)
+
+fviz_cluster(kmeans_4,geom = "point",ECV_FINAL_EDU_SCALE) + theme_bw()
 
 
+```
 
+
+```{r}
 ECV_FINAL_EDU_KMEANS$cluster <- kmeans_4$cluster
-
 ```
-##Cantidad de Barrios por Cluster.
-#### Cantidad de Barrios para el Cluster 1
-```{r}
-kmeans_4$size[1]
-```
-#### Información del Cluster 1
+#### Según el algoritmo, se generaron 4 grupos distribuidos de la siguiente forma :
+  + Cluster 1 -> 8 Barrios.
+  + Cluster 2 -> 178 Barrios.
+  + Cluster 3 -> 23 Barrios.
+  + Cluster 4 -> 101 Barrios.
 
-##### Indicadores claves para analisis.
-
-p_35 Nivel de Analfabetismo en los Barrios de Medellín.
-p_37 Porcentaje de personas que estudiaron en este año.
-p_38 Porcentaje de  desescolarización debido a la falta de garantias en barrios de Medellín.
-p_43 Porcentaje de estudiantes que utilizan el transporte publico para dirigirse al centro educativo?
-p_44 Porcentajes de estudiantes que se demoran mas de 41 minutos para llegar a su centro educativo.
-p_45 Porcentaje de personas con educacion superior
-```{r}
-ECV_FINAL_EDU_KMEANS %>% filter(cluster == '1')
-```
-
-```{r}
+#### La distribucion numerica de los grupos es generado a partir de la siguiente instrucción. kmeans_4$size
 
 
 
+#### Grafico de radar para Clusters
 
-
-```
-
-
-#### Grafico para analisis de Cluster.
-p_35 Nivel de Analfabetismo en los Barrios de Medellín.
-p_37 Porcentaje de personas que estudiaron en este año.
-p_38 Porcentaje de  desescolarización debido a la falta de garantias en barrios de Medellín.
-p_43 Porcentaje de estudiantes que utilizan el transporte publico para dirigirse al centro educativo?
-p_44 Porcentajes de estudiantes que se demoran mas de 41 minutos para llegar a su centro educativo.
-p_45 Porcentaje de personas con educacion superior
-
-
-
-#### Grafico de radar Clusters
 ```{r}
 ECV_FINAL_EDU_KMEANS %>% group_by(cluster) %>% summarise(k_35=mean(k_35),k_37=mean(k_37),k_38=mean(k_38),k_43=mean(k_43),k_44=mean(k_44),k_45=mean(k_45)) -> ECV_KMEAN_MEDIA
 
@@ -573,25 +540,395 @@ df_c_t <- rbind(df_c_t,df_c_2)
 df_c_t <- rbind(df_c_t,df_c_3)
 df_c_t <- rbind(df_c_t,df_c_4)
 
-r_1 <- ggplot(df_c_t %>% filter(cluster=="1"), aes(x = pregunta, y = valor, col = funcion, group = funcion)) + 
-  geom_polygon(fill = NA) + coord_polar() + labs(title="Cluster 1")
+r_1 <- ggplot(df_c_t %>% filter(cluster=="1"), aes(x = pregunta, y = valor, col=funcion, group = funcion)) + 
+  geom_polygon(fill = NA) + coord_polar() + labs(title="Cluster 1") 
 
-r_2 <- ggplot(df_c_t %>% filter(cluster=="2"), aes(x = pregunta, y = valor, col = funcion, group = funcion)) + 
+r_2 <- ggplot(df_c_t %>% filter(cluster=="2"), aes(x = pregunta, y = valor, col=funcion, group = funcion)) + 
   geom_polygon(fill = NA) + coord_polar() + labs(title="Cluster 2")
 
-r_3 <- ggplot(df_c_t %>% filter(cluster=="3"), aes(x = pregunta, y = valor, col = funcion, group = funcion)) + 
+r_3 <- ggplot(df_c_t %>% filter(cluster=="3"), aes(x = pregunta, y = valor, col=funcion,group = funcion)) + 
   geom_polygon(fill = NA) + coord_polar() + labs(title="Cluster 3")
 
-r_4 <- ggplot(df_c_t %>% filter(cluster=="4"), aes(x = pregunta, y = valor, col = funcion, group = funcion)) + 
+r_4 <- ggplot(df_c_t %>% filter(cluster=="4"), aes(x = pregunta, y = valor, col=funcion, group = funcion)) + 
   geom_polygon(fill = NA) + coord_polar() + labs(title="Cluster 4")
 
 grid.arrange(r_1,r_2,r_3,r_4,ncol = 2)
 
 ```
 
+Antes de iniciar los analisis de los grupos, se realizo un proceso de calculo de los minimos, maximos y media de la data real recogida en las encuestas con el proposito de realizar unas graficos de radar y poder hacer un analísis que nos permita entregar mayor detalle de lo que sucede en cada cluster. Al realizar los graficos a simple vista encontramos que existen varios indicadores que realmente no aportan mucho en el momento de definir los grupos. Tambien se procede a consultar los indicadores fundamentales que nos permiten validar la fortaleza del modelo, garantizando la menor varianza dentro del cluster (within_SS) y la maxima varianza entre los grupos (between_SS) y así calculando su ajuste.
+
+
+between_SS = 860.3908
+total_SS = 1854
+between_SS / total_SS (Varianza de la data) =  46,40272%
+
+```{r}
+
+kmeans_4$withinss[1]
+kmeans_4$betweenss[1] / kmeans_4$totss
+
+```
+
+En este caso la XXXX tiene un valor muy bajo. Aquí tenemos 2 alternativas para aumentar el nivel de xxxx.
+  + Aumentar el tamaño de K, pero aquí corremos el riesgo de perder el equilibrio de los grupos pues si aumentamos el K lo que se hacemos es divider más los grupos hasta que el valor de las varianzas de los grupos sea igual total de todas la varianza y no estariamos respetando los graficos recomendados en la prueba del codo donde nos recomienda un k de grupos optimo.
+  
+  + Disminuir la cantidad de variables, dejando solo las variables que realmente aportan a la definición de los grupos. En este caso se generara un metodo de PCA para encontrar dichas dimensiones con el poder de determinacion de grupo mediante el calculo de su porcentaje de variación.
+  
+```{r}
+fviz_eig(prcomp(ECV_FINAL_EDU[,2:7]) , addlabels=TRUE, main = "PCA Indicadores de Educación", ylab ="Porcentaje de explicacion de los Indicadores", xlab = "Indicadores")
+```
+
+La grafica generada del PCA donde calcula los porcentajes de explicación nos muestra que existen variables las cuales tiene muy poco poder de explicación para definir los grupos. Realizando un camparativo entre los graficos, Radar y PCA encontramos que K_37 (Porcentaje de personas que estudiaron en este año.) y K_38 (Porcentaje de  desescolarización debido a la falta de garantias en barrios de Medellín.) no son determinantes en el momento de definir los grupos.
+
+Se procedera a Eliminar los indicadores y correr de nuevo el algoritmo K-means y determinar su ajuste.
+
+
+```{r}
+#ECV_FINAL_EDU$barrio <- paste(ECV_FINAL_EDU$comuna,ECV_FINAL_EDU$barrio,sep = "/")
+ECV_FINAL_EDU$comuna <- NULL
+ECV_FINAL_EDU$k_37 <- NULL
+ECV_FINAL_EDU$k_38 <- NULL
+ECV_FINAL_EDU_SCALE <- tibble::column_to_rownames(ECV_FINAL_EDU, var = "barrio")
+ECV_FINAL_EDU_SCALE <- scale(ECV_FINAL_EDU_SCALE)
+head(ECV_FINAL_EDU_SCALE)
+```
+```{r}
+ECV_FINAL_EDU_KMEANS <- ECV_FINAL_EDU
+set.seed(1234)
+kmeans_3 <- kmeans(ECV_FINAL_EDU_SCALE, 3, iter.max = 1000, nstart = 10)
+kmeans_4 <- kmeans(ECV_FINAL_EDU_SCALE, 4, iter.max = 1000, nstart = 10)
+kmeans_5 <- kmeans(ECV_FINAL_EDU_SCALE, 5, iter.max = 1000, nstart = 10)
+
+#g_3 = fviz_cluster(kmeans_3,geom = "point",ECV_FINAL_EDU_SCALE) + theme_bw()
+#g_4 = fviz_cluster(kmeans_4,geom = "point",ECV_FINAL_EDU_SCALE) + theme_bw()
+#g_5 = fviz_cluster(kmeans_5,geom = "point",ECV_FINAL_EDU_SCALE) + theme_bw()
+#grid.arrange(g_3,g_4,g_5,ncol = 2)
+
+fviz_cluster(kmeans_4,geom = "point",ECV_FINAL_EDU_SCALE) + theme_bw()
+```
+
+Después de eliminar los dos indicadores que no tenian ningun poder explicativo para los grupos, vemos nuevamente que en el grafico de cluster los grupos estan más definidos y no solapan tanto como en la primera corrida del modelo.
+
+Revisando de nuevo el indicador propio de evaluación, tenemos :
+
+
+between_SS = 747.8616 se encuentra un
+total_SS = 1236
+between_SS / total_SS (Varianza de la data) =  60.5066%
+
+
+
+De esta forma, se procede entonces a generar de nuevo los graficos de radar.
+
+```{r}
+ECV_FINAL_EDU_KMEANS$cluster <- NULL
+ECV_FINAL_EDU_KMEANS$cluster <- kmeans_4$cluster
+
+ECV_FINAL_EDU_KMEANS %>% group_by(cluster) %>% summarise(k_35=mean(k_35),k_43=mean(k_43),k_44=mean(k_44),k_45=mean(k_45)) -> ECV_KMEAN_MEDIA
+
+ECV_VAL <- data.frame((t(ECV_KMEAN_MEDIA)))
+ECV_VAL <- setNames(ECV_VAL,c("cluster_1","cluster_2","cluster_3","cluster_4"))
+ECV_VAL <- ECV_VAL[2:5,]
+ECV_VAL %>% tibble::rownames_to_column("pregunta") -> ECV_VAL
+
+ECV_FINAL_EDU_KMEANS %>% group_by(cluster) %>% summarise(k_35=min(k_35),k_43=min(k_43),k_44=min(k_44),k_45=min(k_45)) -> ECV_KMEAN_MIN
+
+ECV_VAL_MIN <- data.frame((t(ECV_KMEAN_MIN)))
+ECV_VAL_MIN <- setNames(ECV_VAL_MIN,c("cluster_1","cluster_2","cluster_3","cluster_4"))
+ECV_VAL_MIN <- ECV_VAL_MIN[2:5,]
+ECV_VAL_MIN %>% tibble::rownames_to_column("pregunta") -> ECV_VAL_MIN
+
+ECV_FINAL_EDU_KMEANS %>% group_by(cluster) %>% summarise(k_35=max(k_35),k_43=max(k_43),k_44=max(k_44),k_45=max(k_45)) -> ECV_KMEAN_MAX
+
+ECV_VAL_MAX <- data.frame((t(ECV_KMEAN_MAX)))
+ECV_VAL_MAX <- setNames(ECV_VAL_MAX,c("cluster_1","cluster_2","cluster_3","cluster_4"))
+ECV_VAL_MAX <- ECV_VAL_MAX[2:5,]
+ECV_VAL_MAX %>% tibble::rownames_to_column("pregunta") -> ECV_VAL_MAX
+
+
+df_c_1 <- data.frame(ECV_VAL$pregunta,round(ECV_VAL$cluster_1 * 100,digits = 2))
+df_c_1 <- Jmisc::addCol(df_c_1,value="1")
+df_c_1 <- Jmisc::addCol(df_c_1,value="mean")
+df_c_1 <- setNames(df_c_1,c("pregunta","valor","cluster","funcion"))
+df_c_2 <- data.frame(ECV_VAL$pregunta,round(ECV_VAL$cluster_2  * 100, digits = 2))
+df_c_2 <- Jmisc::addCol(df_c_2,value="2")
+df_c_2 <- Jmisc::addCol(df_c_2,value="mean")
+df_c_2 <- setNames(df_c_2,c("pregunta","valor","cluster","funcion"))
+df_c_3 <- data.frame(ECV_VAL$pregunta,round(ECV_VAL$cluster_3  * 100,digits = 2))
+df_c_3 <- Jmisc::addCol(df_c_3,value="3")
+df_c_3 <- Jmisc::addCol(df_c_3,value="mean")
+df_c_3 <- setNames(df_c_3,c("pregunta","valor","cluster","funcion"))
+df_c_4 <- data.frame(ECV_VAL$pregunta,round(ECV_VAL$cluster_4  * 100, digits = 2))
+df_c_4 <-Jmisc::addCol(df_c_4,value="4")
+df_c_4 <- Jmisc::addCol(df_c_4,value="mean")
+df_c_4 <- setNames(df_c_4,c("pregunta","valor","cluster","funcion"))
+ 
+df_c_t <- rbind(df_c_1,df_c_2)
+df_c_t <- rbind(df_c_t,df_c_3)
+df_c_t <- rbind(df_c_t,df_c_4)
+
+df_c_1 <- data.frame(ECV_VAL_MIN$pregunta,round(ECV_VAL_MIN$cluster_1 * 100,digits = 2))
+df_c_1 <- Jmisc::addCol(df_c_1,value="1")
+df_c_1 <- Jmisc::addCol(df_c_1,value="min")
+df_c_1 <- setNames(df_c_1,c("pregunta","valor","cluster","funcion"))
+df_c_2 <- data.frame(ECV_VAL_MIN$pregunta,round(ECV_VAL_MIN$cluster_2  * 100, digits = 2))
+df_c_2 <- Jmisc::addCol(df_c_2,value="2")
+df_c_2 <- Jmisc::addCol(df_c_2,value="min")
+df_c_2 <- setNames(df_c_2,c("pregunta","valor","cluster","funcion"))
+df_c_3 <- data.frame(ECV_VAL_MIN$pregunta,round(ECV_VAL_MIN$cluster_3  * 100,digits = 2))
+df_c_3 <- Jmisc::addCol(df_c_3,value="3")
+df_c_3 <- Jmisc::addCol(df_c_3,value="min")
+df_c_3 <- setNames(df_c_3,c("pregunta","valor","cluster","funcion"))
+df_c_4 <- data.frame(ECV_VAL_MIN$pregunta,round(ECV_VAL_MIN$cluster_4  * 100, digits = 2))
+df_c_4 <-Jmisc::addCol(df_c_4,value="4")
+df_c_4 <- Jmisc::addCol(df_c_4,value="min")
+df_c_4 <- setNames(df_c_4,c("pregunta","valor","cluster","funcion"))
+ 
+df_c_t <- rbind(df_c_t,df_c_1)
+df_c_t <- rbind(df_c_t,df_c_2)
+df_c_t <- rbind(df_c_t,df_c_3)
+df_c_t <- rbind(df_c_t,df_c_4)
+
+df_c_1 <- data.frame(ECV_VAL_MAX$pregunta,round(ECV_VAL_MAX$cluster_1 * 100,digits = 2))
+df_c_1 <- Jmisc::addCol(df_c_1,value="1")
+df_c_1 <- Jmisc::addCol(df_c_1,value="max")
+df_c_1 <- setNames(df_c_1,c("pregunta","valor","cluster","funcion"))
+df_c_2 <- data.frame(ECV_VAL_MAX$pregunta,round(ECV_VAL_MAX$cluster_2  * 100, digits = 2))
+df_c_2 <- Jmisc::addCol(df_c_2,value="2")
+df_c_2 <- Jmisc::addCol(df_c_2,value="max")
+df_c_2 <- setNames(df_c_2,c("pregunta","valor","cluster","funcion"))
+df_c_3 <- data.frame(ECV_VAL_MAX$pregunta,round(ECV_VAL_MAX$cluster_3  * 100,digits = 2))
+df_c_3 <- Jmisc::addCol(df_c_3,value="3")
+df_c_3 <- Jmisc::addCol(df_c_3,value="max")
+df_c_3 <- setNames(df_c_3,c("pregunta","valor","cluster","funcion"))
+df_c_4 <- data.frame(ECV_VAL_MAX$pregunta,round(ECV_VAL_MAX$cluster_4  * 100, digits = 2))
+df_c_4 <-Jmisc::addCol(df_c_4,value="4")
+df_c_4 <- Jmisc::addCol(df_c_4,value="max")
+df_c_4 <- setNames(df_c_4,c("pregunta","valor","cluster","funcion"))
+ 
+df_c_t <- rbind(df_c_t,df_c_1)
+df_c_t <- rbind(df_c_t,df_c_2)
+df_c_t <- rbind(df_c_t,df_c_3)
+df_c_t <- rbind(df_c_t,df_c_4)
+
+r_1 <- ggplot(df_c_t %>% filter(cluster=="1"), aes(x = pregunta, y = valor, col=funcion, group = funcion)) + 
+  geom_polygon(fill = NA) + coord_polar() + labs(title="Cluster 1") 
+
+r_2 <- ggplot(df_c_t %>% filter(cluster=="2"), aes(x = pregunta, y = valor, col=funcion, group = funcion)) + 
+  geom_polygon(fill = NA) + coord_polar() + labs(title="Cluster 2")
+
+r_3 <- ggplot(df_c_t %>% filter(cluster=="3"), aes(x = pregunta, y = valor, col=funcion,group = funcion)) + 
+  geom_polygon(fill = NA) + coord_polar() + labs(title="Cluster 3")
+
+r_4 <- ggplot(df_c_t %>% filter(cluster=="4"), aes(x = pregunta, y = valor, col=funcion, group = funcion)) + 
+  geom_polygon(fill = NA) + coord_polar() + labs(title="Cluster 4")
+
+grid.arrange(r_1,r_2,r_3,r_4,ncol = 2)
+
+```
+
+### Analisis de los Clusters
+
+##### Indicadores claves para analisis.
+
+Después del ejercicio realizado para eliminar indicadores se tienen los siguientes definidos para el analisis.
+
+  + p_35 Nivel de Analfabetismo en los Barrios de Medellín.
+  + p_43 Porcentaje de estudiantes que utilizan el transporte publico para dirigirse al centro educativo?
+  + p_44 Porcentajes de estudiantes que se demoran mas de 41 minutos para llegar a su centro educativo.
+  + p_45 Porcentaje de personas con educacion superior
+  
+
+Los grupos generados por el algoritmo K-means para la encuesta que estudia la dimensión de educación para el estudio Medellín como Vamos, muestra que la educación en los barrios de Medellin se dividen en 4 grupos donde son determinados por :
+  * El nivel de analfabetismo.
+  * El medio de transporte en el que se dirigen a su sitio de educación.
+  * El tipo que demoran en ir a su lugar de estudio.
+  * El nivel de estudios superiores que la persona curso.
+  
+El Cluster número 1, se diferencia de los demas grupos porque las personas que se dirigen a estudar su mayoria no se demoran más de 41 minutos, menos del 3% de los encuentados. Solo un poco más del 10% tienen estudios superiores, menos del 10% utilizan el trasporte publico para dirigirse al sitio de estudio, temas comprensible debido a que menos del 3% estudian en sitios lejanos. El nivel de analfabetismo ronda en un 7% de las perosonas encuestadas.
+El cluster 1 esta comprenido en 130 barrios dispersos en todo el valle de la aburra, distribuidas en comunas de.
+
+ALTA VISTA,ARANJUEZ,BELEN,BUENOS AIRES,CASTILLA,DOCE DE OCTUBRE,EL POBLADO,GUAYABAL,LA AMERICA,LA CANDELARIA,LAURELES-ESTADIO,MANRIQUE,PALMITAS,ROBLEDO,SAN ANTONIO DE PRADO,SAN CRISTOBAL,SAN JAVIER,SANTA ELENA,VILLA HERMOSA
+
+Este cluster comprenden comunas donde la mayoria de sus habitantes pertenecen a una clase obrera trabajadora.
+
+El Cluster numero 2, se diferencia de los demas grupos debido a que el 23% las personas que viven en estos barrios, utilizan el transporte publico para dirigirse al lugar de estudio. La segunda variable más notoria es el analfabetismo, con al rededor del 18%. Las dos variables restantes tiene un comportamiento menor.
+El cluster 2 esa conformado por 3 barrios estos son:
+El carmelo, La Ilusión y San Jose de la Montaña, todos pertenecientes a la comuna de San Cristobal. Este clustes nos permite concluir que hace fata una institucion educativa cerca a la comunidad que permita elevar el nivel de vida de los habitantes pues gran cantidad de personas deben deplazarse mas de 41 minutos a un sitio de educacion.
+
+El Clustes 3, Este grupo se caracteriza porque tiene los indicadores más regulares que los otros grupos, tres de cuatro indicadores de estudio tiene un comportamiento parejo, el analfabetismo tiene un leve incremento con respecto a los demas. El indicador k_45 (Estudios superiores) tiene un leve decenso. Esto puede ocurrir debido a que las personas de estos barrios, de mayores posibilidades.
+Los barrios que hacen parte de este cluster estan comprendidos en las siguientes comunas:
+ARANJUEZ,BELEN,BUENOS AIRES,CASTILLA,DOCE DE OCTUBRE,GUAYABAL,LA CANDELARIA,MANRIQUE,PALMITAS,POPULAR
+ROBLEDO,SAN ANTONIO DE PRADO,SAN CRISTOBAL,SAN JAVIER,SANTA CRUZ,SANTA ELENA,VILLA HERMOSA
+
+El Cluster 4, Este cluster se difencia de los otros grupos por su bajo porcentaje de analfabetismo y su alto porcentaje de personas con educación superior. Las personas que viven en los barrios pertenecientes a este grupo utilizan poco el transporte urbano y en promedio sedemoran poco para llegar a su lugar de estudio. Este grupo al parecer corresponde a u grupo aspiracional debido a que las personas con mejores oportunidades para tener estudio superiores llegan a este grupo.
+El cluster 4, comprenden 70 barrios ubicados en las siguientes comunas.
+
+ALTA VISTA,BELEN,BUENOS AIRES,EL POBLADO,LA AMERICA,LA CANDELARIA,LAURELES-ESTADIO,ROBLEDO,SANTA ELENA
+
+
 #### Grafico apilado de barras
 Comportamiento de preguntas por cluster
 
 ```{r}
-ggplot(df_c_t,aes(x=pregunta, y=valor, fill=cluster)) + geom_bar( stat="identity",position = "stack") 
+ggplot(df_c_t,aes(x=cluster, y=valor, fill=pregunta)) + geom_bar( stat="identity",position = "stack") 
 ```
+
+### Generacion de Mapa de distribucion de cluster.
+
+
+
+```{r}
+library(stringr)
+library(tidyr)
+library(rgdal)
+
+#ECV_FINAL_EDU_KMEANS["barrio"] <- gsub("-","/",ECV_FINAL_EDU_KMEANS$barrio)
+ECV_FINAL_EDU_KMEANS <- separate(ECV_FINAL_EDU_KMEANS,col = barrio,into = c("comuna","barrio"),sep="/")
+
+```
+
+
+
+
+```{r}
+barrios_med <- readOGR("~/Documents/GitHub/TAE_T1/Barrio_Vereda/Barrio_Vereda.shp",layer="Barrio_Vereda")
+nombres_barrios <- iconv(barrios_med@data$NOMBRE,"UTF-8","ISO_8859-1")
+#head(nombres_barrios)
+```
+
+
+
+
+```{r}
+sub_ <- ECV_FINAL_EDU_KMEANS[,c("barrio","cluster")]
+
+head(ECV_FINAL_EDU_KMEANS)
+
+```
+
+```{r}
+rownames(sub_) <- NULL
+#head(sub_)
+```
+
+Convertimos a minúsculas
+
+```{r}
+sub_$barrio <- tolower(sub_$barrio)
+#head(sub_)
+```
+
+```{r}
+#sub_$barrio[which(sub_$barrio=="º ")] <- "o."
+# Create replacements data frame
+library(DataCombine)
+Replaces <- data.frame(from = c("º ", "ú", "ó", "í", "é", "á", "Á", "ñ"), to = c("o.", "Ãº", "Ã³", "Ã", "Ã©", "Ã¡", "Ã\u0081", "Ã±"))
+sub_ <- FindReplace(data = sub_, Var = "barrio", replaceData = Replaces,
+                     from = "from", to = "to", exact = FALSE)
+head(sub_)
+```
+
+
+```{r}
+Caps <- function(x) {
+
+  s <- strsplit(x, " ")[[1]]
+
+  paste(toupper(substring(s, 1,1)), substring(s, 2),
+
+        sep="", collapse=" ")
+
+}
+
+
+sub_$barrio <- sapply(sub_$barrio, Caps)
+#head(sub_)
+```
+
+
+```{r}
+sub_$barrio[sub_$barrio == "Barrios De JesÃºs"] <- "Barrios de JesÃºs"
+sub_$barrio[sub_$barrio == "Piedras Blancas"] <- "Piedras Blancas - Matasano"
+sub_$barrio[sub_$barrio == "Area Expansion San Antonio De Prado"] <- "Ã\u0081rea de ExpansiÃ³n San Antonio de Prado"
+sub_$barrio[sub_$barrio == "Prado"] <- "San Antonio de Prado"
+sub_$barrio[sub_$barrio == "Altavista Central"] <- "Altavista Sector Central"
+sub_$barrio[sub_$barrio == "San JosÃ© Del Manzanillo"] <- "San JosÃ© del Manzanillo"
+sub_$barrio[sub_$barrio == "El Yolombo"] <- "Yolombo"
+sub_$barrio[sub_$barrio == "Urquita"] <- "UrquitÃ¡"
+sub_$barrio[sub_$barrio == "Corregimiento Palmitas"] <- "Palmitas Sector Central"
+sub_$barrio[sub_$barrio == "San Jose De La MontaÃ±a"] <- "San JosÃ© de La MontaÃ±a"
+sub_$barrio[sub_$barrio == "Cabecera San CristÃ³bal"] <- "Cabecera Urbana Corregimiento San CristÃ³bal"
+sub_$barrio[sub_$barrio == "Area Expansion Pajarito"] <- "Ãrea de ExpansiÃ³n Pajarito"
+sub_$barrio[sub_$barrio == "Area De Expancion San Cristobal"] <- "Ãrea de ExpansiÃ³n San CristÃ³bal"
+sub_$barrio[sub_$barrio == "Santa Maria De Los Ã¡ngeles"] <- "Santa MarÃ�a de Los Ãngeles"
+sub_$barrio[sub_$barrio == "Juan Pablo Ii"] <- "Parque Juan Pablo II"
+sub_$barrio[sub_$barrio == "Bombona No.1"] <- "BombonÃ¡ No.1"
+sub_$barrio[sub_$barrio == "Bombona No.2"] <- "BombonÃ¡ No.2"
+sub_$barrio[sub_$barrio == "La Asomadera No.1"] <- "Asomadera No.1"
+sub_$barrio[sub_$barrio == "La Asomadera No.2"] <- "Asomadera No.2"
+sub_$barrio[sub_$barrio == "Los Cerros El Verjel"] <- "Los Cerros El Vergel"
+sub_$barrio[sub_$barrio == "Villa Tina"] <- "Villatina"
+sub_$barrio[sub_$barrio == "Santa Ines"] <- "Santa InÃ©s"
+sub_$barrio[sub_$barrio == "Campo Valdes No.2"] <- "Campo ValdÃ©s No.2"
+sub_$barrio[sub_$barrio == "Progreso"] <- "El Progreso"
+sub_$barrio[sub_$barrio == "Progreso  no.2"] <- "Progreso No.2"
+sub_$barrio[sub_$barrio == "Doce De Octubre No.1"] <- "Doce de Octubre No.1"
+sub_$barrio[sub_$barrio == "Doce De Octubre No.2"] <- "Doce de Octubre No.2"
+sub_$barrio[sub_$barrio == "Santo Domingo Sabio No.1"] <- "Santo Domingo Savio No.1"
+sub_$barrio[sub_$barrio == "Santo Domingo Sabio No.2"] <- "Santo Domingo Savio No.2"
+sub_$barrio[sub_$barrio == "Moscu No.1"] <- "MoscÃº No.1"
+sub_$barrio[sub_$barrio == "Moscu No.2"] <- "MoscÃº No.2"
+sub_$barrio[sub_$barrio == "San Josela Cima No.1"] <- "San JosÃ© La Cima No.1"
+sub_$barrio[sub_$barrio == "San Jose La Cima No.2"] <- "San JosÃ© La Cima No.2"
+sub_$barrio[sub_$barrio == "Villa Del Socorro"] <- "Villa del Socorro"
+sub_$barrio[sub_$barrio == "El Playon De Los Comuneros"] <- "PlayÃ³n de Los Comuneros"
+sub_$barrio[sub_$barrio == "Santa Fe"] <- "Santa FÃ©"
+sub_$barrio[sub_$barrio == "Santa Rosa De Lima"] <- "Santa Rosa de Lima"
+sub_$barrio[sub_$barrio == "Alejandro EchavarrÃa"] <- "Alejandro EchavarrÃ�a"
+sub_$barrio[sub_$barrio == "Mira Flores"] <- "Miraflores"
+sub_$barrio[sub_$barrio == "Ocho De Marzo"] <- "Ocho de Marzo"
+sub_$barrio[sub_$barrio == "Villa Lilliam"] <- "Villa Liliam"
+sub_$barrio[sub_$barrio == "Altos Del Poblado"] <- "Altos del Poblado"
+sub_$barrio[sub_$barrio == "Villa Lilliam"] <- "Villa Liliam"
+sub_$barrio[sub_$barrio == "La Loma De Los Bernal"] <- "La Loma de Los Bernal"
+sub_$barrio[sub_$barrio == "Ã¡rea De ExpansiÃ³n BelÃ©n RincÃ³n"] <- "Ãrea de ExpansiÃ³n BelÃ©n RincÃ³n"
+sub_$barrio[sub_$barrio == "Carlos E Restrepo"] <- "Carlos E. Restrepo"
+sub_$barrio[sub_$barrio == "Ã¡rea De ExpansiÃ³n BelÃ©n RincÃ³n"] <- "Ãrea de ExpansiÃ³n BelÃ©n RincÃ³n"
+```
+
+```{r}
+library(dplyr)
+ 
+#  union two dataframes  without duplicates
+nom_bar <- merge(barrios_med, sub_[!duplicated(sub_$barrio), ], by.x="NOMBRE", by.y="barrio",  all.x = TRUE)
+
+```
+
+
+
+```{r}
+nombres <- data.frame(nom_bar$NOMBRE)
+print(sum(is.na(nom_bar$cluster)))
+```
+
+
+
+
+
+```{r}
+library(leaflet)
+m <-leaflet(nom_bar)
+#factpal <- colorFactor(topo.colors(4), nom_bar$cluster)
+factpal <- colorFactor(palette = c("red","green","#00FFFF","purple"), levels = c("1", "2", "3", "4"))
+m <- addPolygons(m,popup=nombres_barrios, color=~factpal(cluster))
+m <- addTiles(m)
+m
+#c("blue", "yellow", "green", "red")
+```
+
+
+
+
+
