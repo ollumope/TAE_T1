@@ -1,0 +1,122 @@
+<html>
+  <head>
+    <link href="./css/all.css" rel="stylesheet">
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        color: #333;
+        font-family: Arial, Helvetica, sans-serif;
+        line-height: 160%;
+        margin: 45px 15%;        
+      }
+
+      header { 
+        display: flex;
+        align-items: center;
+        vertical-align: middle;
+        justify-content: center;
+      }
+
+      h1 { 
+        font-size: 2em;
+        display: inline-block;
+        margin-right: 45px;
+        margin-bottom: 12px;
+      }
+
+      h4 {
+        margin: 0;
+        font-weight: 800;
+        font-size: 0.9em;
+      }
+
+      header img {
+        width: 250px;
+      }
+
+      section article {
+        margin-top: 22px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-column-gap: 12px;
+        row-gap: 12px;
+      }
+      section article .link {
+        width: 100%;
+        background-color: #999;
+        height: 90px;
+        border-radius: 4px;
+        font-size: 2em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(360deg, rgba(255,154,162,1) 0%, rgba(255,183,178,1) 35%, rgba(255,218,193,1) 100%);
+        overflow: hidden;
+        position: relative;
+      }
+
+      section article .link:link, .link:visited {
+        text-decoration: none;
+        color: white;
+      }
+
+      section article .link span {
+        padding-left: 12px
+      }
+
+      section article .link i { 
+        font-size: 2em;
+        position: absolute;
+        left: 25px;
+        opacity: 25%;
+      }
+
+      #education {
+        background: #CE1483;
+      }
+
+      #employment {
+        background: #1B2961;
+      }
+
+      #movility {
+        background: #7F2CCB;
+      }
+
+      #health {
+        background: #F86624;
+      }
+
+      #living {
+        background: #FFAE03;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <section>
+        <h1>Encuesta de Calidad de Vida - Medell&iacute;n</h1>
+        <h4>Santiago Arboleda Quiroz, Olga Luc&iacute;a Montoya P&eacute;rez, Alberto Ramirez Velasquez, Juan David Tangarife Pati&ntilde;o</h4>
+      </section>
+      
+      <img src="./img/Logo-unal.png" />
+    </header>
+    <section>
+      <header>
+        La encuesta de Calidad de Vida es un estudio sociecon&oacute;mico realizado a los habitantes del municipio de Medell&iacute;n, el cual busca conocer cuales son las condiciones y percepciones que tienen con respecto a las siguientes dimensiones:
+      </header>
+      <article>
+        <a class="link" id="education" href="./"><i class="fas fa-graduation-cap"></i><span>Educaci&oacute;n</span></a>
+        <a class="link" id="employment" href="./"><i class="fas fa-suitcase"></i><span>Empleo</span></a>
+        <a class="link" id="movility" href="./Dim_Movilidad.html"><i class="fas fa-bus-alt"></i><span>Movilidad</span></a>
+        <a class="link" id="health" href="./Dim_Salud.html"><i class="fas fa-notes-medical"></i><span>Salud</span></a>
+        <a class="link" id="living" href="./Dim_Vivienda.html"><i class="fas fa-home"></i><span>Vivienda y Servicios P&uacute;blicos</span></a>
+      </article>
+    </section>
+    <footer>
+      
+    </footer>
+  </body>
+</html>
