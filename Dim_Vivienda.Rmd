@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 La dimensi&oacute;n de vivienda y servicios p&uacute;blicos mide dentro de la encuesta de calidad de vida como viven los Medellinenses, en que condiciones estan sus hogares a nivel de tipo de vivienda y sus características fisicas, materialesl de paredes y pisos tenencias, financiación de la viviend,: tipo de tenencia de la vivienda; tenencia de escritura de propiedad; subsidios recibidos para la compra, construcción, mejora, titulación o escrituración de la vivienda
 
-Para el an&aacute;lisis de la dimensi&oacute;n de VIVIENDA Y SERVICIOS PUBLICOS en los barrios de Medell&iacute;n se toman las siguientes preguntas con sus respectivos indicadores, estas preguntas son seleccionadas a la luz de descubrir si las condiciones de la dimensi&ocuate;n aporta a la calidad de vida de los habitantes de los barrios de Medell&iacute;n:
+Para el an&aacute;lisis de la dimensi&oacute;n de VIVIENDA Y SERVICIOS PUBLICOS en los barrios de Medell&iacute;n se toman las siguientes preguntas con sus respectivos indicadores, estas preguntas son seleccionadas a la luz de descubrir si las condiciones de la dimensi&oacute;n aporta a la calidad de vida de los habitantes de los barrios de Medell&iacute;n:
 
 * P_12 - Cu&aacute;ntas personas componen este hogar?
 
@@ -27,17 +27,17 @@ Posibles respuestas:
     * -98	No sabe
     * -88	No aplica
     * -77	Otra
-    * 1	Orden P&uacute;blico
+    * 1	Orden Público
     * 2	Estudio
-    * 3	B&uacute;squeda de trabajo
+    * 3	Búsqueda de trabajo
     * 4	Venta de tierra
     * 5	Razones familiares
-    * 6	Fen&oacute;meno natural
+    * 6	Fénomeno natural
     * 7	Motivos laborales
     * 8	Razones de salud
     * 9	Traslado del hogar
     * 10	Nos quedaba cerca
-    * 11	Nos pareci&oacute; atractiva
+    * 11	Nos pareció atractiva
     
 Para efectos de esta pregunta, es de inter&eacute;s an&aacute;lizar que tanto son usados los barrios c&oacute;mo refugio ante problemas de orden P&uacute;blico en otros barrios o verdas
 
@@ -52,7 +52,7 @@ Posibles respuestas:
     * -99	No responde
     * -98	No sabe
 
-Con el fin de medir la permanencia de los hogares en un barrio, se determina que 6 a&ntilde;os es un tiempo prudente para indicar que las personas se siente c&oacute; en el barrio y por tal motivo permanecen en &eacute;l
+Con el fin de medir la permanencia de los hogares en un barrio, se determina que 6 a&ntilde;os es un tiempo prudente para indicar que las personas se siente c&oacute;modo en el barrio y por tal motivo permanecen en &eacute;l
 
 Indicador: Porcentaje de familias que han vivo en el barrio o vereda por m&aacute;s de 6 a&ntilde;os
 
@@ -86,18 +86,18 @@ F&oacute;rmula: Cantidad de hogares que viven en <Tipo de vivienda> / N&uacute;m
 
 Posibles respuestas:
 
-    * 1	Entidad prestadora de servicios p&uacute;blicos domiciliarios
+    * 1	Entidad prestadora de servicios públicos domiciliarios
     * 2	Acueducto veredal o comunal
     * 3	Pozo con bomba
     * 4	Pozo sin bomba, aljibe, jaguey o barreno
     * 5	Agua lluvia
-    * 6	R&iacute;o, quebrada o manantial, nacimiento
-    * 7	Pila p&uacute;blica
+    * 6	Río, quebrada o manantial, nacimiento
+    * 7	Pila pública
     * 8	Carro tanque
     * 9	Aguatero
-    * 10	Agua embotellada o en bolsa
+    * 10 Agua embotellada o en bolsa
 
-Para medir que tan conectados a la f&aacute;cil para los hogares de la ciudad de Medell&iacute; conseguir el agua para el consumo humano, se seleccionan para la medici&ocute; las opciones 1 y 2
+Para medir que tan conectados a la f&aacute;cil para los hogares de la ciudad de Medell&iacute;n conseguir el agua para el consumo humano, se seleccionan para la medici&oacute;n las opciones 1 y 2
 
 Indicador: Porcentaje de hogares que toman el agua de entidades prestadoras de servicios p&uacute;blicos domiciliarios (1,2)
 
@@ -154,7 +154,7 @@ F&oacute;rmula: N&uacute;mero de hogares con con servicios p&uacute;blicos de Co
 Posibles respuestas: 
 
     * 1	En arriendo o subarriendo mensual
-    * 2	Propia, la est&aacute;n pagando mensualmente
+    * 2	Propia, la están pagando mensualmente
     * 3	Propia, totalmente pagada
     * 4	En usufructo
     * 5	Ocupante de hecho
@@ -197,7 +197,7 @@ ECV <- read.csv("./dataSet/encuesta_calidad_vida.csv", header = TRUE, sep=";")
 ```
 
 ```{r}
-#Funci&oacute;n que permite sacar la moda para las preguntas orientadas a hogares
+#Función que permite sacar la moda para las preguntas orientadas a hogares
 getmode <- function(v) {
    uniqv <- unique(v)
    uniqv[which.max(tabulate(match(v, uniqv)))]
@@ -212,14 +212,14 @@ ECV <- setNames(ECV, set_dataSet_names(names(ECV)))
 #### **1. Caracterizaci&oacute;n de las dimensiones para la dimensi&oacute;n VIVIENDA Y SERVICIOS PUBLICOS**
 
 ```{r}
-#Construcci&oacute;n del dataframe con las preguntas de interes para la dimensi&oacute;n vivienda y servicios p&uacute;blicos
+#Construcción del dataframe con las preguntas de interes para la dimensión vivienda y servicios públicos
 ECV_VIVIENDA <- ECV[,c("encuesta","persona","comuna","barrio","estrato","p_1","p_12","p_26","p_30","p_146",
                        "p_149","p_158","p_160","p_162","p_164","p_165","p_169","p_173","p_174","p_178","p_180","p_226")]
 ```
 Analizando el conjunto de preguntas seleccionadas para esta dimensi&oacute;n, se evidencia que todas ellas fueron respondidas por los encuestados, puesto que no existen valores nulos. 
 
 ```{r}
-# Se procede a realizar el c&aacute;lculo de cada uno de los indicadores definidos para la dimensi&oacute;n Vivienda y Servicios p&uacute;blicos
+# Se procede a realizar el cálculo de cada uno de los indicadores definidos para la dimensión Vivienda y Servicios públicos
 ECV_VIVIENDA_BARRIO <-ECV_VIVIENDA %>% select(encuesta,comuna, barrio,p_12) %>% 
                       group_by(encuesta, comuna, barrio) %>% 
                       summarise(total = n_distinct(encuesta),p_12 = max(p_12)) %>% ungroup() %>% 
@@ -228,7 +228,7 @@ ECV_VIVIENDA_BARRIO <-ECV_VIVIENDA %>% select(encuesta,comuna, barrio,p_12) %>%
 ```
 
 ```{r}
-#* C&aacute;lculo P_26. Porcentaje de hogares por barrio que han llegado por problemas de orden p&uacute;blico
+#* Cálculo P_26. Porcentaje de hogares por barrio que han llegado por problemas de orden público
 #ECV_VIVIENDA[,c("p_26")]
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_26 == 1,] %>% 
        group_by(encuesta, comuna, barrio) %>% summarise(p_26 = min(p_26)) %>% ungroup() %>%
@@ -243,9 +243,9 @@ ECV_VIVIENDA_BARRIO$p_26 <- ECV_VIVIENDA_BARRIO$p_26 / ECV_VIVIENDA_BARRIO$total
 
 
 ```{r}
-#* C&aacute;lculo P_30. Porcentaje de familias que han vivo en el barrio o vereda por m&aacute;s de 6 a&ntilde;os
+#* Cálculo P_30. Porcentaje de familias que han vivo en el barrio o vereda por más de 6 a&ntilde;os
 ECV_VIVIENDA$p_antiguedad <- ifelse(ECV_VIVIENDA$p_30 >= 0 & ECV_VIVIENDA$p_30 <= 5, 1, ifelse(ECV_VIVIENDA$p_30 < 0, 0, 2))
-# 1 menos de 5 a&ntilde;os, 0 No sabe, 2 m&aacute;s de 6 a&ntilde;os
+# 1 menos de 5 años, 0 No sabe, 2 mãs de 6 años
 
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_antiguedad == 2,] %>% 
        group_by(encuesta, comuna ,barrio) %>% summarise(p_30 = n_distinct(p_antiguedad)) %>% ungroup() %>%
@@ -260,7 +260,7 @@ ECV_VIVIENDA_BARRIO$p_30 <- ECV_VIVIENDA_BARRIO$p_30 / ECV_VIVIENDA_BARRIO$total
 
 
 ```{r}
-#*C&aacute;lculo P_146_1. Porcentaje de hogares del barrio que viven en Rancho o vivienda de desechos
+#*Cálculo P_146_1. Porcentaje de hogares del barrio que viven en Rancho o vivienda de desechos
 #ECV_VIVIENDA[ECV_VIVIENDA$p_146 == 1,]
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_146 == 1,] %>% 
        group_by(encuesta, comuna, barrio) %>% summarise(p_146 = n_distinct(p_146)) %>% ungroup() %>%
@@ -277,7 +277,7 @@ colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_146'] <- 'p_14
 
 
 ```{r}
-#*C&aacute;lculo P_146_2. Porcentaje de hogares del barrio que viven en Cuarto(s)
+#*Cálculo P_146_2. Porcentaje de hogares del barrio que viven en Cuarto(s)
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_146 == 2,] %>% 
        group_by(encuesta, comuna, barrio) %>% summarise(p_146 = n_distinct(p_146)) %>% ungroup() %>%
        group_by(comuna, barrio) %>% summarise(p_146 = sum(p_146)) %>% ungroup()
@@ -292,7 +292,7 @@ colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_146'] <- 'p_14
 ```
 
 ```{r}
-#*C&aacute;lculo P_146_3. Porcentaje de hogares del barrio que viven en Cuartos en inquilinato
+#*Cálculo P_146_3. Porcentaje de hogares del barrio que viven en Cuartos en inquilinato
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_146 == 3,] %>% 
        group_by(encuesta, comuna, barrio) %>% summarise(p_146 = n_distinct(p_146)) %>% ungroup() %>%
        group_by(comuna, barrio) %>% summarise(p_146 = sum(p_146)) %>% ungroup()
@@ -308,7 +308,7 @@ colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_146'] <- 'p_14
 
 
 ```{r}
-#*C&aacute;lculo P_146_4. Porcentaje de hogares del barrio que viven en Apartamento
+#*Cálculo P_146_4. Porcentaje de hogares del barrio que viven en Apartamento
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_146 == 4,] %>% 
        group_by(encuesta, comuna, barrio) %>% summarise(p_146 = n_distinct(p_146)) %>% ungroup() %>%
        group_by(comuna, barrio) %>% summarise(p_146 = sum(p_146)) %>% ungroup()
@@ -324,7 +324,7 @@ colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_146'] <- 'p_14
 
 
 ```{r}
-#*C&aacute;lculo P_146_5. Porcentaje de hogares del barrio que viven en Casa
+#*Cálculo P_146_5. Porcentaje de hogares del barrio que viven en Casa
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_146 == 5,] %>% 
        group_by(encuesta, comuna, barrio) %>% summarise(p_146 = n_distinct(p_146)) %>% ungroup() %>%
        group_by(comuna, barrio) %>% summarise(p_146 = sum(p_146)) %>% ungroup()
@@ -339,7 +339,7 @@ colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_146'] <- 'p_14
 ```
 
 ```{r}
-#* C&aacute;lculo P_149. Porcentaje de hogares que toman el agua de entidades prestadoras de servicios p&uacute;blicos domiciliarios
+#* Cálculo P_149. Porcentaje de hogares que toman el agua de entidades prestadoras de servicios públicos domiciliarios
 tmp <- subset(ECV_VIVIENDA, p_149 == 1 | p_149 == 2) %>% 
        group_by(encuesta, comuna, barrio) %>% summarise(p_149 = n_distinct(encuesta)) %>% ungroup() %>%
        group_by(comuna, barrio) %>% summarise(p_149 = sum(p_149)) %>% ungroup()
@@ -353,7 +353,7 @@ ECV_VIVIENDA_BARRIO$p_149 <- ECV_VIVIENDA_BARRIO$p_149 / ECV_VIVIENDA_BARRIO$tot
 
 
 ```{r}
-#* C&aacute;lculo Servicios P&uacute;blicos B&aacute;sicos (P_158, P_162, P_165, P_174)
+#* Cálculo Servicios Públicos Básicos (P_158, P_162, P_165, P_174)
 ECV_VIVIENDA$p_SP <- ifelse(ECV_VIVIENDA$p_158 == 1 & ECV_VIVIENDA$p_162 == 1 & ECV_VIVIENDA$p_165 == 1
                           & ECV_VIVIENDA$p_174 == 1, 1, 0)
 
@@ -370,7 +370,7 @@ ECV_VIVIENDA_BARRIO$p_SP <- ECV_VIVIENDA_BARRIO$p_SP / ECV_VIVIENDA_BARRIO$total
 
 
 ```{r}
-#* C&aacute;lculo Servicios P&uacute;blicos Suspendidos (P_160, P_164, P_173, P_169, P_180)
+#* Cálculo Servicios Públicos Suspendidos (P_160, P_164, P_173, P_169, P_180)
 ECV_VIVIENDA$p_SPS <- ifelse(ECV_VIVIENDA$p_160 == 1 | ECV_VIVIENDA$p_164 == 1 | ECV_VIVIENDA$p_173 == 1
                           | ECV_VIVIENDA$p_169 == 1 | ECV_VIVIENDA$p_180 == 1, 1, 0)
 
@@ -387,7 +387,7 @@ ECV_VIVIENDA_BARRIO$p_SPS <- ECV_VIVIENDA_BARRIO$p_SPS / ECV_VIVIENDA_BARRIO$tot
 
 
 ```{r}
-#* C&aacute;lculo P_178. Porcentaje de hogares con servicios p&uacute;blicos de Conexi&oacute;n a Internet
+#* Cálculo P_178. Porcentaje de hogares con servicios públicos de Conexión a Internet
 tmp <- ECV_VIVIENDA[ECV_VIVIENDA$p_178 == 1,] %>% 
        group_by(encuesta, comuna, barrio) %>% summarise(p_178 = min(p_178)) %>% ungroup() %>%
        group_by(comuna, barrio) %>% summarise(p_178 = sum(p_178)) %>% ungroup()
@@ -449,12 +449,12 @@ colnames(ECV_VIVIENDA_BARRIO)[colnames(ECV_VIVIENDA_BARRIO) == 'p_226'] <- 'p_22
 
 
 ```{r}
-#Depuraci&oacute;n de columnas
+#Depuración de columnas
 ECV_VIVIENDA_BARRIO$total <- NULL
 ```
 
 
-**Estadisticas b&aacute;sicas VIVIENDA Y SERVICIOS PUBLICOS**
+**Estad&iacute;sticas b&aacute;sicas VIVIENDA Y SERVICIOS PUBLICOS**
 
 ```{r}
 summary(ECV_VIVIENDA_BARRIO)
@@ -474,13 +474,13 @@ cormatrix = cor(ECV_VIVIENDA_BARRIO[,3:17])
 corrplot(cormatrix, type = "upper", order = "hclust", stl.col = "black", tl.srt = 45)
 ```
 
-A partir de la gr&aacute;afica anterior se puede indicar que existe una relaci&oacute;n lineal entre los hogares cuya vivienda no es propia o arrendada con respecto a contar con los servicios p&uacute;blicos b&aacute;sicos, esto quiere decir que estos hogares siempre van a tener acceso  a los servicios p&uacute;blicos, otras conclusiones ser&iacute;n que entre mayor casas menor apartmentos hay en el municipio y en la misma direcci&oacute; los hogares arrendados y propios
+A partir de la gr&aacute;afica anterior se puede indicar que existe una relaci&oacute;n lineal entre los hogares cuya vivienda no es propia o arrendada con respecto a contar con los servicios p&uacute;blicos b&aacute;sicos, esto quiere decir que estos hogares siempre van a tener acceso  a los servicios p&uacute;blicos, otras conclusiones ser&iacute;n que entre mayor casas menor apartmentos hay en el municipio y en la misma direcci&oacute;n los hogares arrendados y propios
 
 #### **2. Agrupamientos**
 
 - Reducci&oacute;n de la dimensionalidad 
 
-Con aras de determinar si las preguntas seleccionadas en la dimensi&oacute;n aportan al futuro modelo de agrupamiento, se busca reducir las preguntas a aquellas que representen m&aacute;s en el an&aacutelisis, esto se realiza a trav&eacute;s del modelo de componentes principales (PCA)
+Con aras de determinar si las preguntas seleccionadas en la dimensi&oacute;n aportan al futuro modelo de agrupamiento, se busca reducir las preguntas a aquellas que representen m&aacute;s en el an&aacute;lisis, esto se realiza a trav&eacute;s del modelo de componentes principales (PCA)
 
 ```{r}
 pca <- prcomp(ECV_VIVIENDA_BARRIO[,3:17], scale = TRUE)
@@ -532,7 +532,7 @@ Si bien, la mayor&iacute;a de los indicadores del dataframe ECV_VIVIENDA_BARRIO 
 
 ```{r}
 ECV_VIVIENDA_BARRIO_CP <- ECV_VIVIENDA_BARRIO
-#Concatenaci&oacute;n de comuna y barrio ya que existen nombres iguales de barrio en diferentes comunas
+#Concatenación de comuna y barrio ya que existen nombres iguales de barrio en diferentes comunas
 ECV_VIVIENDA_BARRIO_CP$barrio <- paste(ECV_VIVIENDA_BARRIO_CP$comuna,ECV_VIVIENDA_BARRIO_CP$barrio,sep = "-")
 ECV_VIVIENDA_BARRIO_CP$comuna <- NULL
 
@@ -559,7 +559,7 @@ plot(2:10,diff(SS$data$y), type = "h", main="Diferencia en errores", xlab="k", y
   * M&eacute;todo de la siluetta 
 
 ```{r}
-fviz_nbclust(ECV_VIVIENDA_BARRIO_SCALE, kmeans, method = "silhouette")
+fviz_nbclust(ECV_VIVIENDA_BARRIO_SCALE, kmeans, method = "silhouette") + labs(title= "Número óptimo de Clusters") + xlab("Número de Cluster (K)") 
 ```
 
 De acuerdo a las gr&aacute;ficas de los diferentes m&eacute;todos, se concluye que k = 3, es el k &oacute;ptimo para la dimensi&oacute;n VIVIENDA Y SERVICIOS PUBLICOS, por lo cual aplicaremos el algoritmo Kmeans con dicho valor de k 
@@ -644,9 +644,9 @@ Caracter&iacute;sticas que distinguen un grupo de barrios de otro
 
  - Grupo 1: se caracterizan por tener la mayor cantidad de personas por hogar, el 8% de la poblaci&oacute;n de este grupo llegaron por problemas de orden p&uacute;blico.
  
- - Grupo 2: se caracterizan por contar con menos personas por hogar, tener m&aacute;s apartamentos que casas, muchas de ellos propias, un 97% de la poblaci&oacute;n cuentan con los servicios p&uacute;blicos b&aacute y es el grupo que mayor acceso a internet tiene
+ - Grupo 2: se caracterizan por contar con menos personas por hogar, tener m&aacute;s apartamentos que casas, muchas de ellos propias, un 97% de la poblaci&oacute;n cuentan con los servicios p&uacute;blicos b&aacute;sicos y es el grupo que mayor acceso a internet tiene
  
- - Grupo 3: se caracterizan por vivir mayoremente en casas propias y tener bajo acceso a internet y a los servicios p&uacute;blicos b&aacute, varios de los que tienen el acceso lo tienen suspendidos.
+ - Grupo 3: se caracterizan por vivir mayoremente en casas propias y tener bajo acceso a internet y a los servicios p&uacute;blicos b&aacute;s varios de los que tienen el acceso lo tienen suspendidos.
  
 En t&eacute;rminos generales, no es muy com&uacute;n para ninguno de los tres grupos vivir en cuartos y tener los servicios publicos suspendidos.
 
@@ -657,7 +657,7 @@ Se cargan las subdivisiones territoriales de Medell&iacute;n, tomadas de la p&aa
 
 ```{r,warning=FALSE,message=FALSE}
 barrios_med <- readOGR("./dataSet/Barrio_Vereda/Barrio_Vereda.shp",layer="Barrio_Vereda")
-#Conversi&oacute;n de codificaciones 
+#Conversión de codificaciones 
 nombres_barrios <- iconv(barrios_med@data$NOMBRE,"UTF-8","ISO_8859-1")
 ```
 
@@ -668,7 +668,7 @@ df_member$barrio <- tolower(df_member$barrio)
 
 
 ```{r}
-#Funci&oacute;n que busca capitalizar los nombres de los barrios
+#Función que busca capitalizar los nombres de los barrios
 Caps <- function(x) {
   s <- strsplit(x, " ")[[1]]
   paste(toupper(substring(s, 1,1)), substring(s, 2), sep="", collapse=" ")
@@ -733,13 +733,13 @@ df_member$barrio[df_member$barrio == "Ã¡rea De ExpansiÃ³n BelÃ©n RincÃ³n
 
 
 ```{r}
-#Selecci&oacute;n de los campos necesarios, barrio y cluster
+#Selección de los campos necesarios, barrio y cluster
 df_member %>% select(barrio, cluster) -> df_member
 ```
 
 
 ```{r}
-#Se unen los dataframe de barrios_med en donde se encuentra los poligonos de los barrios de Medell&iacute;n con su respectivo cluster
+#Se unen los dataframe de barrios_med en donde se encuentra los poligonos de los barrios de Medellín con su respectivo cluster
 
 barrios_cluster <- merge(barrios_med, df_member[!duplicated(df_member$barrio), ], by.x="NOMBRE", by.y="barrio",  all.x = TRUE)
 ```

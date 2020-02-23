@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 La dimensi&oacute;n de salud mide que tan informados se encuentran las Medellinenses sobre los m&eacute;todos de planificaci&oacute;n familiar y que tanto hacen uso del sistema de salud de la ciudad.
 
-Para la el an&aacute;lisis de la dimensi&oacute;n de SALUD en los barrios de Medell&iacute;n se toman las siguientes preguntas con sus respectivos indicadores, estas preguntas son seleccionadas a la luz de descubrir si las condiciones de la dimensi&ocuate;n aporta a la calidad de vida de los habitantes de los barrios de Medell&iacute;n:
+Para la el an&aacute;lisis de la dimensi&oacute;n de SALUD en los barrios de Medell&iacute;n se toman las siguientes preguntas con sus respectivos indicadores, estas preguntas son seleccionadas a la luz de descubrir si las condiciones de la dimensi&oacute;n aporta a la calidad de vida de los habitantes de los barrios de Medell&iacute;n:
 
 * P_307 - ¿Considera que tiene suficiente informaci&oacute;n acerca de los m&eacute;todos de planificaci&oacute;n familiar?
 
@@ -60,12 +60,12 @@ Posibles respuestas:
     * -98	No sabe.
     * -88	No aplica
     * -77	Otro
-    * 1	Consult&oacute; la Red de servicios de salud.
-    * 2	Acudi&oacute; a una terapia alternativa.
-    * 3	Acudi&oacute; a un boticario o farmaceuta
-    * 4	Consult&oacute; a un tegua, emp&iacute;rico, curandero, yerbatero, comadrona, etc.
-    * 5	Us&oacute; remedios caseros
-    * 6	Se automedic&oacute;
+    * 1	Consultó la Red de servicios de salud.
+    * 2	Acudió a una terapia alternativa.
+    * 3	Acudió a un boticario o farmaceuta
+    * 4	Consultó a un tegua, empírico, curandero, yerbatero, comadrona, etc.
+    * 5	Usó remedios caseros
+    * 6	Se automedicó
     * 7	Nada
 
 Para efectos del indicador se toma la opci&oacute;n 1. Consult&oacute; la Red de servicios de salud. para calcular el indicador, ya que esta opci&oacute;n mide que tanto uso se le da a la red.
@@ -141,11 +141,11 @@ ECV <- read.csv("./dataSet/encuesta_calidad_vida.csv", header = TRUE, sep=";")
 
 
 ```{r}
-#Construcci&oacute;n del dataframe con las preguntas de interes para la dimensi&oacute;n salud
-# Cambio de la cabecera de dataFrame por nombras m&aacute;s legibles.
+#Construcción del dataframe con las preguntas de interes para la dimensión salud
+# Cambio de la cabecera de dataFrame por nombras más legibles.
 ECV <- setNames(ECV, set_dataSet_names(names(ECV)))
 
-#Seleci&oacute;n de las caracteristicas y preguntas a analizar en el ejercicio.
+#Seleción de las caracteristicas y preguntas a analizar en el ejercicio.
 ECV_SALUD <- ECV[,c("encuesta","persona","comuna","barrio","estrato","p_15","p_307","p_308","p_324","p_325","p_326","p_327")]
 
 #Se eliminan filas cuando todos sus valores sean nulos
@@ -159,7 +159,7 @@ ECV_SALUD <- ECV_SALUD[!(ECV_SALUD$barrio =="DESCONOCIDO"),]
 #### **1. Caracterizaci&oacute;n de las dimensiones para la dimensi&oacute;n VIVIENDA Y SERVICIOS PUBLICOS**
 
 ```{r}
-#* C&aacute;lculo N&uacute;mero total de encuestados
+#* Cálculo Número total de encuestados
 ECV_SALUD_BARRIO <- ECV_SALUD %>% select(encuesta,comuna, barrio,persona) %>% 
                     group_by(encuesta, comuna, barrio) %>% 
                     summarise(total = max(persona)) %>% ungroup() %>% 
@@ -168,7 +168,7 @@ ECV_SALUD_BARRIO <- ECV_SALUD %>% select(encuesta,comuna, barrio,persona) %>%
 
 
 ```{r}
-#* C&aacute;lculo P_307. Porcentaje de personas que consideran que tienen suficiente informaci&oacute;n sobre los m&eacute;todos de planificaci&oacute;n familiar
+#* Cálculo P_307. Porcentaje de personas que consideran que tienen suficiente información sobre los métodos de planificación familiar
 tmp <- ECV_SALUD[ECV_SALUD$p_307 == 1,] %>% 
        group_by(encuesta, comuna, barrio) %>% summarise(p_307 = sum(p_307)) %>% ungroup() %>%
        group_by(comuna,barrio) %>% summarise(p_307 = sum(p_307)) %>% ungroup()
@@ -182,7 +182,7 @@ ECV_SALUD_BARRIO$p_307 <- ECV_SALUD_BARRIO$p_307 / ECV_SALUD_BARRIO$total
 
 
 ```{r}
-#* C&aacute;lculo N&uacute;mero total de mujeres encuestadas
+#* Cálculo Número total de mujeres encuestadas
 tmp <- ECV_SALUD[ECV_SALUD$p_15 == 2,] %>% select(encuesta, comuna, barrio,persona) %>% 
        group_by(encuesta,comuna, barrio) %>% summarise(total_mujer = n_distinct(persona)) %>% ungroup() %>% 
        group_by(comuna,barrio) %>% summarise(total_mujer = sum(total_mujer)) %>% ungroup()
@@ -195,7 +195,7 @@ if(exists('tmp')) rm(tmp)
 
 
 ```{r}
-#* C&aacute;lculo P_308. Porcentaje de personas que planifican
+#* Cálculo P_308. Porcentaje de personas que planifican
 tmp <- subset(ECV_SALUD, p_308 == 1) %>% select(encuesta,comuna,barrio,persona) %>% 
        group_by(encuesta, comuna,barrio) %>% summarise(p_308 = n_distinct(persona)) %>% ungroup() %>% 
        group_by(comuna,barrio) %>% summarise(p_308 = sum(p_308)) %>% ungroup()
@@ -209,7 +209,7 @@ ECV_SALUD_BARRIO$p_308 <- ECV_SALUD_BARRIO$p_308 / ECV_SALUD_BARRIO$total
 
 
 ```{r}
-# * C&aacute;lculo P_324. Porcentaje de personas que en los &uacute;ltimos 30 d&iacute;as han tenido alg&uacute;n problema de salud y no haya necesitado hospitalizaci&oacute;n (1)
+# * Cálculo P_324. Porcentaje de personas que en los últimos 30 dáas han tenido algún problema de salud y no haya necesitado hospitalización (1)
 tmp <- ECV_SALUD[ECV_SALUD$p_324 == 1,] %>% 
          group_by(encuesta, comuna,barrio)  %>% summarise(p_324 = n_distinct(persona)) %>% ungroup() %>%
          group_by(comuna,barrio) %>% summarise(p_324 = sum(p_324)) %>% ungroup()
@@ -223,7 +223,7 @@ ECV_SALUD_BARRIO$p_324 <- ECV_SALUD_BARRIO$p_324 / ECV_SALUD_BARRIO$total
 
 
 ```{r}
-# * C&aacute;lculo p_325. Porcentaje de personas que consultan a la red de servicios de salud cuando tienes problemas de salud (1)
+# * Cálculo p_325. Porcentaje de personas que consultan a la red de servicios de salud cuando tienes problemas de salud (1)
 tmp <- ECV_SALUD[ECV_SALUD$p_325 == 1,] %>% 
          group_by(encuesta, comuna,barrio)  %>% summarise(p_325 = n_distinct(persona)) %>% ungroup() %>%
          group_by(comuna,barrio) %>% summarise(p_325 = sum(p_325)) %>% ungroup()
@@ -237,12 +237,12 @@ ECV_SALUD_BARRIO$p_325 <- ECV_SALUD_BARRIO$p_325 / ECV_SALUD_BARRIO$total
 
 
 ```{r}
-# * C&aacute;lculo p_326. Porcentaje de personas que no solicitaron o no recibieron atenci&oacute;n m&eacute;dica por mal servicio, definiendo mal servicio como el conjunto de respuestas:
+# * Cálculo p_326. Porcentaje de personas que no solicitaron o no recibieron atenci&oacute;n médica por mal servicio, definiendo mal servicio como el conjunto de respuestas:
 # 
 #   * 5	Mal servicio o citas distanciadas en el tiempo
 #   * 6	No lo atendieron
-#   * 7	No conf&iacute;a en los m&eacute;dicos o personal de salud
-#   * 8	Consult&oacute; antes y no le resolvieron el problema
+#   * 7	No confáa en los médicos o personal de salud
+#   * 8	Consultá antes y no le resolvieron el problema
 tmp <- subset(ECV_SALUD, p_326 == 5 | p_326 == 6 | p_326 == 7 | p_326 == 8) %>% 
        group_by(encuesta, comuna,barrio)  %>% summarise(p_326 = n_distinct(persona)) %>% ungroup() %>%
        group_by(comuna,barrio) %>% summarise(p_326 = sum(p_326)) %>% ungroup()
@@ -256,7 +256,7 @@ ECV_SALUD_BARRIO$p_326 <- ECV_SALUD_BARRIO$p_326 / ECV_SALUD_BARRIO$total
 
 
 ```{r}
-# * C&aacute;lculo p_327. Porcentaje de personas que utilizan servicios de promocion y prevenci&oacute;n (1). 
+# * Cálculo p_327. Porcentaje de personas que utilizan servicios de promocion y prevención (1). 
 tmp <- ECV_SALUD[ECV_SALUD$p_327 == 1,] %>% 
          group_by(encuesta, comuna,barrio)  %>% summarise(p_327 = n_distinct(persona)) %>% ungroup() %>%
          group_by(comuna,barrio) %>% summarise(p_327 = sum(p_327)) %>% ungroup()
@@ -270,7 +270,7 @@ ECV_SALUD_BARRIO$p_327 <- ECV_SALUD_BARRIO$p_327 / ECV_SALUD_BARRIO$total
 
 
 ```{r}
-# Depuraci&oacute;n de columnas
+# Depuración de columnas
 ECV_SALUD_BARRIO$total <- NULL
 ECV_SALUD_BARRIO$total_mujer <- NULL
 ```
@@ -306,7 +306,7 @@ La matriz de correlaci&oacute;n muestra la relaci&oacute;n existente entre las p
 
 - Reducci&oacute;n de la dimensionalidad 
 
-Con aras de determinar si las preguntas seleccionadas en la dimensi&oacute;n aportan al futuro modelo de agrupamiento, se busca reducir las preguntas a aquellas que representen m&aacute;s en el an&aacutelisis, esto se realiza a trav&eacute;s del modelo de componentes principales (PCA)
+Con aras de determinar si las preguntas seleccionadas en la dimensi&oacute;n aportan al futuro modelo de agrupamiento, se busca reducir las preguntas a aquellas que representen m&aacute;s en el an&aacute;lisis, esto se realiza a trav&eacute;s del modelo de componentes principales (PCA)
 
 ```{r}
 pca <- prcomp(ECV_SALUD_BARRIO[,3:8], scale = TRUE)
@@ -342,7 +342,7 @@ Si bien, la mayoria de los indicadores del dataframe ECV_SALUD_BARRIO se encuent
 
 ```{r}
 ECV_SALUD_BARRIO_CP <- ECV_SALUD_BARRIO
-#Concatenaci&oacute;n de comuna y barrio ya que existen nombres iguales de barrio en diferentes comunas
+#Concatenación de comuna y barrio ya que existen nombres iguales de barrio en diferentes comunas
 ECV_SALUD_BARRIO_CP$barrio <- paste(ECV_SALUD_BARRIO_CP$comuna,ECV_SALUD_BARRIO_CP$barrio,sep = "-")
 ECV_SALUD_BARRIO_CP$comuna <- NULL
 ECV_SALUD_BARRIO_SCALE <- tibble::column_to_rownames(ECV_SALUD_BARRIO_CP, var = "barrio")
@@ -353,7 +353,7 @@ Se utilizan diferentes m&eacute;todos para determinar el k &oacute;ptimo a utili
 
   * M&eacute;todo del codo 
 ```{r}
-fviz_nbclust(ECV_SALUD_BARRIO_SCALE, kmeans, method = "wss") +  labs(title= "Número óptimo de Clusters") + xlab("N&uacute;mero de Cluster (K)") 
+fviz_nbclust(ECV_SALUD_BARRIO_SCALE, kmeans, method = "wss") +  labs(title= "Número óptimo de Clusters") + xlab("Número de Cluster (K)") 
 ```
 
  * Diferencia entre los errores generados con diferentes k
@@ -366,7 +366,7 @@ plot(2:10,diff(SS$data$y), type = "h", main="Diferencia en errores", xlab="k", y
   * M&eacute;todo de la siluetta 
 
 ```{r}
-fviz_nbclust(ECV_SALUD_BARRIO_SCALE, kmeans, method = "silhouette")
+fviz_nbclust(ECV_SALUD_BARRIO_SCALE, kmeans, method = "silhouette") +  labs(title= "Número óptimo de Clusters") + xlab("Número de Cluster (K)") 
 ```
 
 Dado que para los diferentes m&eacute;todos de determinaci&oacute;n del k &oacute;ptimo, hay dos posibles opciones, k =2 y k = 4, se ejecuta el algoritmo con estos posibles valores y se tomar&aacute; aquel que ajuste mejor el modelo.
@@ -441,21 +441,21 @@ Conozcamos algunos barrios que pertenecen a cada uno de estos grupos
 ```{r}
 #df_member[order(df_member$cluster),]
 print("Grupo 1")
-head(df_member_salud[df_member_salud$cluster == 1,]$barrio)
+toString(df_member_salud[df_member_salud$cluster == 1,]$barrio)
 ```
 
 ```{r}
 print("Grupo 2")
-head(df_member_salud[df_member_salud$cluster == 2,]$barrio)
+toString(df_member_salud[df_member_salud$cluster == 2,]$barrio)
 ```
 
 ```{r}
 print("Grupo 3")
-head(df_member_salud[df_member_salud$cluster == 3,]$barrio)
+toString(df_member_salud[df_member_salud$cluster == 3,]$barrio)
 ```
 
 ```{r}
-print("Grupo 4")
+toString("Grupo 4")
 head(df_member_salud[df_member_salud$cluster == 4,]$barrio)
 ```
 
@@ -474,85 +474,7 @@ ggplotly(summary_cluster_means)
 
 Caracter&iacute;sticas que distinguen un grupo de barrios de otro
 
-El grupo 1 se diferencia de los dem&aacuete;s porque es el que en promedio dice tener suficiente informaci&oacute;n sobre los m&eacute;todos de planificaci&oacute;n familiar y son los que m&aacute;s planifican, el grupo 2 se identifica por ser los que en promedio en los &uacute;ltimos 30 d&iacute; se enfermaron sin necesidad de hospitalizaci&oacute;n y asistieron a la red de servicios de salud, el grupo 4 se caracteriza porque en promedio tiene menor aplicaci&oacute; en todos los indicadores de esta dimensi&oacute;, por su parte el grupo 3 es un grupo cuyo compartamiento es intermedio. 
- 
-```{r}
-df_member_salud %>% group_by(cluster) %>% summarise(p_307=min(p_307), p_308 = min(p_308), p_324= min(p_324), p_325=min(p_325)) -> ECV_SALUD_KMEANS_MIN
-
-ECV_SALUD_MIN <- data.frame((t(ECV_SALUD_KMEANS_MIN)))
-ECV_SALUD_MIN <- setNames(ECV_SALUD_MIN,c("cluster_1","cluster_2","cluster_3","cluster_4"))
-ECV_SALUD_MIN <- ECV_SALUD_MIN[3:8,]
-ECV_SALUD_MIN %>% tibble::rownames_to_column("pregunta") -> ECV_SALUD_MIN
-
-df_member_salud %>% group_by(cluster) %>% summarise(p_307=max(p_307), p_308 = max(p_308), p_324= max(p_324), p_325=min(p_325)) -> ECV_SALUD_KMEANS_MAX
-
-ECV_SALUD_MAX <- data.frame((t(ECV_SALUD_KMEANS_MAX)))
-ECV_SALUD_MAX <- setNames(ECV_SALUD_MAX,c("cluster_1","cluster_2","cluster_3","cluster_4"))
-ECV_SALUD_MAX <- ECV_SALUD_MAX[3:8,]
-ECV_SALUD_MAX %>% tibble::rownames_to_column("pregunta") -> ECV_SALUD_MAX
-
-
-df_c_1 <- data.frame(ECV_SALUD_MIN$pregunta,round(ECV_SALUD_MIN$cluster_1 * 100,digits = 2))
-df_c_1 <- Jmisc::addCol(df_c_1,value="1")
-df_c_1 <- Jmisc::addCol(df_c_1,value="min")
-df_c_1 <- setNames(df_c_1,c("pregunta","valor","cluster","funcion"))
-df_c_2 <- data.frame(ECV_SALUD_MIN$pregunta,round(ECV_SALUD_MIN$cluster_2  * 100, digits = 2))
-df_c_2 <- Jmisc::addCol(df_c_2,value="2")
-df_c_2 <- Jmisc::addCol(df_c_2,value="min")
-df_c_2 <- setNames(df_c_2,c("pregunta","valor","cluster","funcion"))
-df_c_3 <- data.frame(ECV_SALUD_MIN$pregunta,round(ECV_SALUD_MIN$cluster_3  * 100,digits = 2))
-df_c_3 <- Jmisc::addCol(df_c_3,value="3")
-df_c_3 <- Jmisc::addCol(df_c_3,value="min")
-df_c_3 <- setNames(df_c_3,c("pregunta","valor","cluster","funcion"))
-df_c_4 <- data.frame(ECV_SALUD_MIN$pregunta,round(ECV_SALUD_MIN$cluster_4  * 100, digits = 2))
-df_c_4 <-Jmisc::addCol(df_c_4,value="4")
-df_c_4 <- Jmisc::addCol(df_c_4,value="min")
-df_c_4 <- setNames(df_c_4,c("pregunta","valor","cluster","funcion"))
-
-df_c_t <- NULL
-df_c_t <- rbind(df_c_t,df_c_1)
-df_c_t <- rbind(df_c_t,df_c_2)
-df_c_t <- rbind(df_c_t,df_c_3)
-df_c_t <- rbind(df_c_t,df_c_4)
-
-df_c_1 <- data.frame(ECV_SALUD_MAX$pregunta,round(ECV_SALUD_MAX$cluster_1 * 100,digits = 2))
-df_c_1 <- Jmisc::addCol(df_c_1,value="1")
-df_c_1 <- Jmisc::addCol(df_c_1,value="max")
-df_c_1 <- setNames(df_c_1,c("pregunta","valor","cluster","funcion"))
-df_c_2 <- data.frame(ECV_SALUD_MAX$pregunta,round(ECV_SALUD_MAX$cluster_2  * 100, digits = 2))
-df_c_2 <- Jmisc::addCol(df_c_2,value="2")
-df_c_2 <- Jmisc::addCol(df_c_2,value="max")
-df_c_2 <- setNames(df_c_2,c("pregunta","valor","cluster","funcion"))
-df_c_3 <- data.frame(ECV_SALUD_MAX$pregunta,round(ECV_SALUD_MAX$cluster_3  * 100,digits = 2))
-df_c_3 <- Jmisc::addCol(df_c_3,value="3")
-df_c_3 <- Jmisc::addCol(df_c_3,value="max")
-df_c_3 <- setNames(df_c_3,c("pregunta","valor","cluster","funcion"))
-df_c_4 <- data.frame(ECV_SALUD_MAX$pregunta,round(ECV_SALUD_MAX$cluster_4  * 100, digits = 2))
-df_c_4 <-Jmisc::addCol(df_c_4,value="4")
-df_c_4 <- Jmisc::addCol(df_c_4,value="max")
-df_c_4 <- setNames(df_c_4,c("pregunta","valor","cluster","funcion"))
-``` 
-
-```{r}
-df_c_t <- rbind(df_c_t,df_c_1)
-df_c_t <- rbind(df_c_t,df_c_2)
-df_c_t <- rbind(df_c_t,df_c_3)
-df_c_t <- rbind(df_c_t,df_c_4)
-
-r_1 <- ggplot(df_c_t %>% filter(cluster=="1"), aes(x = pregunta, y = valor, col = funcion, group = funcion)) + 
-  geom_polygon(fill = NA) + coord_polar() + labs(title="Cluster 1")
-
-r_2 <- ggplot(df_c_t %>% filter(cluster=="2"), aes(x = pregunta, y = valor, col = funcion, group = funcion)) + 
-  geom_polygon(fill = NA) + coord_polar() + labs(title="Cluster 2")
-
-r_3 <- ggplot(df_c_t %>% filter(cluster=="3"), aes(x = pregunta, y = valor, col = funcion, group = funcion)) + 
-  geom_polygon(fill = NA) + coord_polar() + labs(title="Cluster 3")
-
-r_4 <- ggplot(df_c_t %>% filter(cluster=="4"), aes(x = pregunta, y = valor, col = funcion, group = funcion)) + 
-  geom_polygon(fill = NA) + coord_polar() + labs(title="Cluster 4")
-
-grid.arrange(r_1,r_2,r_3,r_4,ncol = 2)
-```
+El grupo 1 se diferencia de los dem&aacute;s porque es el que en promedio dice tener suficiente informaci&oacute;n sobre los m&eacute;todos de planificaci&oacute;n familiar y son los que m&aacute;s planifican, el grupo 2 se identifica por ser los que en promedio en los &uacute;ltimos 30 d&iacute; se enfermaron sin necesidad de hospitalizaci&oacute;n y asistieron a la red de servicios de salud, el grupo 4 se caracteriza porque en promedio tiene menor aplicaci&oacute;n en todos los indicadores de esta dimensi&oacute;n, por su parte el grupo 3 es un grupo cuyo compartamiento es intermedio. 
 
 **3. An&aacute;lisis espacial **
 
@@ -560,7 +482,7 @@ Se cargan las subdivisiones territoriales de Medell&iacute;n, tomadas de la p&aa
 
 ```{r}
 barrios_med <- readOGR("./dataSet/Barrio_Vereda/Barrio_Vereda.shp",layer="Barrio_Vereda")
-#Conversi&oacute;n de codificaciones 
+#Conversión de codificaciones 
 nombres_barrios <- iconv(barrios_med@data$NOMBRE,"UTF-8","ISO_8859-1")
 ```
 
@@ -571,7 +493,7 @@ df_member_salud$barrio <- tolower(df_member_salud$barrio)
 
 
 ```{r}
-#Funci&oacute;n que busca capitalizar los nombres de los barrios
+#Función que busca capitalizar los nombres de los barrios
 Caps <- function(x) {
   s <- strsplit(x, " ")[[1]]
   paste(toupper(substring(s, 1,1)), substring(s, 2), sep="", collapse=" ")
@@ -634,17 +556,17 @@ df_member_salud$barrio[df_member_salud$barrio == "Ã¡rea De ExpansiÃ³n BelÃ�
 
 
 ```{r}
-#Selecci&oacute;n de los campos necesarios, barrio y cluster
+#Selección de los campos necesarios, barrio y cluster
 df_member_salud %>% select(barrio, cluster) -> df_member_salud
 ```
 
 
 ```{r}
-# Se unen los dataframe de barrios_med en donde se encuentra los poligonos de los barrios de Medell&iacute;n con su respectivo cluster
+# Se unen los dataframe de barrios_med en donde se encuentra los poligonos de los barrios de Medellín con su respectivo cluster
 barrios_cluster <- merge(barrios_med, df_member_salud[!duplicated(df_member_salud$barrio), ], by.x="NOMBRE", by.y="barrio",  all.x = TRUE)
 ```
 
-Se procede a dibujar el mapa de Medell&iacute;n se&ntirlde;alando cada uno de los barrios a que cluster pertenece
+Se procede a dibujar el mapa de Medell&iacute;n se&ntilde;alando cada uno de los barrios a que cluster pertenece
 
 ```{r}
 map <-leaflet(barrios_cluster)
