@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo=FALSE)
 
 ## Dimensión Educación
 
-Esta dimensión hace parte del estudio de la encuesta de calidad de vida de la alcaldia de Medellín 2018, para este ejercicio se seleccionaron las siguientes preguntas de dicha dimensión para realizar el analisis.
+Esta dimensión hace parte del estudio de la encuesta de calidad de vida de la alcaldia de Medellín 2018, para este ejercicio se seleccionaron las siguientes preguntas relacionadas a educación para la realizar del análisis.
 
 
 ```{r results='hide', message=FALSE, warning=FALSE}
@@ -31,6 +31,9 @@ library(factoextra)
 library(NbClust)
 library(gridExtra)
 library(stats)
+library(stringr)
+library(tidyr)
+library(rgdal)
 ```
 
 
@@ -52,10 +55,7 @@ ECV_EDUCACION <- ECV[c("encuesta","comuna","barrio","estrato")]
 ##### Posibles respuestas a la pregunta.
       * Si <- 1.
       * No <- 2.
-##### Variable que se desea medir.
-###### Nivel de Analfabetismo en los Barrios de Medellín.
       
-
 ```{r}
 ECV_EDUCACION[,"p_35"] <- as.character(ECV$p_35)
 
@@ -63,10 +63,13 @@ ECV_EDUCACION[,"p_35"] <- as.character(ECV$p_35)
 
 Se identifica que la pregunta p_35 en su resumen inicial no tiene valores perdidos, tiene una completitud total.
 
-#### Configuración de indicadores para la pregunta p_35.
-Indicador definido.
-* Indicador. Nivel de analfabetismo en barrios de Medellín. 
-* Nivel de analfabetismo = Respuestas en 2 por Barrio / Total encuestados en el Barrio.
+##### Variable que se desea medir.
+##### Indicador:
+##### Nivel de analfabetismo en barrios de Medellín. 
+  
+##### Formula : 
+##### Nivel de analfabetismo = Respuestas en selección 2 por Barrio / Total encuestados en el Barrio.
+  
 
 ```{r}
 ECV_EDUCACION_KPI <- get_indicadores_ei(ECV_EDUCACION,"p_35")
@@ -91,13 +94,11 @@ head(ECV_EDUCACION_kp35)
       * -88 <- No aplica
       
 ##### Variable que se desea medir.
-###### Indicador:
-###### Porcentaje de personas que estudiaron en este año.
-###### Formula : 
-###### Total de encuentas que respondieron 1 (Si) / Total de encuentas por Barrio
+##### Indicador:
+##### Porcentaje de personas que estudiaron en este año.
+##### Formula : 
+##### Total de encuentas que respondieron 1 (Si) / Total de encuentas por Barrio
 
-Indicador definido.
-* Indicador 1 
 ```{r}
 rm(ECV_EDUCACION_KPI)
 #Elimino la pregunta anterior
@@ -107,16 +108,19 @@ ECV_EDUCACION[,"p_37"] <- as.character(ECV$p_37)
 ECV_EDUCACION %>% group_by(p_37) %>% summarise(cantidad = (n()/nrow(ECV_EDUCACION))*100) %>% ungroup() -> df_prop
 
 ```
-Proporsión de la pregunta p_37 con sus posibles respuestas.
+
+Contenido de las respuestas a la pregunta p_37
+
 ```{r}
 head(df_prop)
 ```
 
-Se encuetra que en la pregunta formulada, existe una gran cantidad de respuestas con la opción -88 (No aplica). Esta respuesta puede terner varias consideraciones :
+Se encuetra que en la pregunta formulada, existe una gran cantidad de respuestas con la opción -88 (No aplica). Esta respuesta pueden tener varias consideraciones :
+
   * La persona encuestada, hace parte de las personas que contestaron p_35 como NO.
-  * La persona encuentada, aunque contesto afirmativamente la pregunta p_35, no tiene estudios auque tiene un poco conocimiento en lecto-escritura.
+  * La persona encuentada, aunque contesto afirmativamente la pregunta p_35, no tiene estudios auque tiene un poco  conocimiento en lecto-escritura.
   
-  Para efectos de esta pregunta en este estudio, se considerá que los encuestados en la p_37 con respuesta -88 se entenderá que no realizá estudios durante el año.
+Para efectos de esta pregunta en este estudio, se considerá que los encuestados en la p_37 con respuesta -88 no realizaron estudios durante el año.
   
 ```{r}
 #Asigno el valor 2 (No realizo estudios en el año) para los valores -88 (No aplica)
@@ -165,10 +169,14 @@ head(ECV_EDUCACION_kp37)
 * 22	Ingreso a un programa de rehabilitación por consumo de sustancias psicoactivas
       
 
-####Indicador definido.
-* Indicador 1 Porcentaje de  desescolarización debido a la falta de garantias en barrios de Medellín.
-* Formula del indicador:
-* Numero de encuestas con respuestas orientadas a la falta de garantias / Total encuestados en Barrios
+#### Indicador definido.
+
+#### Indicador:
+  * Porcentaje de desescolarización debido a la falta de garantias en barrios de Medellín.
+  
+#### Formula del indicador:
+  * Numero de encuestas con respuestas orientadas a la falta de garantias / Total encuestados en Barrios.
+  
 ```{r}
 rm(ECV_EDUCACION_KPI)
 #Elimino la pregunta anterior
@@ -177,7 +185,7 @@ ECV_EDUCACION$p_37 = NULL
 ECV_EDUCACION[,"p_38"] <- as.character(ECV$p_38)
 ECV_EDUCACION %>% group_by(p_38) %>% summarise(cantidad = (n()/nrow(ECV_EDUCACION))*100) %>% ungroup() -> df_prop
 ```
-Para consolidar la variable en terminos de indicador se consolidaron las repuestas de la pregunta p_38 en los siguientes grupos, adicional las preguntas fueron agrupadas así.
+Para consolidar la variable en terminos de indicador se consolidaron las repuestas de la pregunta p_38 en los siguientes grupos :
 
 * Otras Actividades - O - (-99,4,5,15,17,18,19,20,22 )
 * No aplica - N - (-88)
@@ -207,7 +215,7 @@ ECV_EDUCACION_KPI %>% select(comuna,barrio,p_38,k_qtion_2) %>% group_by(comuna,b
 head(ECV_EDUCACION_kp38)
 ```
 
-#### Pregunta de la encuesta p_43.
+### Pregunta de la encuesta p_43.
 #### ¿Que medio de transporte utiliza predominantemente para dirigirse a su centro educativo?
 ##### Posibles respuestas a la pregunta.
   * -98	No sabe
@@ -226,9 +234,11 @@ head(ECV_EDUCACION_kp38)
   * 11	Lancha, Canoa, Bote
       
 #### Variable que se desea medir.
-##### Indicador definido.
-##### Indicador 1 Porcentaje de estudiantes que utilizan el transporte publico para dirigirse al centro educativo?
-#####  Numero de encuestas que responden que utiliza servicio publico / Total por Barrio
+##### Indicador.
+  * Porcentaje de estudiantes que utilizan el transporte publico para dirigirse al centro educativo.
+  
+##### Formula
+  * Numero de encuestas que responden que utiliza servicio publico / Total por Barrio
 
 ```{r}
 if(exists("ECV_EDUCACION_KPI"))rm(ECV_EDUCACION_KPI)
@@ -238,7 +248,7 @@ ECV_EDUCACION$p_38 = NULL
 ECV_EDUCACION[,"p_43"] <- as.character(ECV$p_43)
 #ECV_EDUCACION %>% group_by(p_43) %>% summarise(cantidad = (n()/nrow(ECV_EDUCACION))*100) %>% ungroup() -> df_prop
 ```
-##### Para consolidar la variable en terminos de indicador se consolidaron las repuestas de la pregunta p_43 en los ##### siguientes grupos, adicional las preguntas fueron agrupadas así.
+Para consolidar la variable en terminos de indicador se consolidaron las repuestas de la pregunta p_43 en los siguientes grupos:
 
   * No sabe	-98 
   * No aplica	-88
@@ -269,7 +279,7 @@ head(ECV_EDUCACION_kp43)
 ```
 
 
-#### p_44
+### Pregunta de la encuesta p_44.
 #### ¿Cuanto tiempo tarda en llegar a su centro educativo?
 ##### Posibles respuestas a la pregunta.
   * -99	No responde
@@ -284,10 +294,14 @@ head(ECV_EDUCACION_kp43)
 ##### Variable que se desea medir.
 ###### Rango de tiempo en que se tarda en llegar a un centro educativo por barrio en Medellin.
 
-#### Configuración de indicadores para la pregunta p_44.
-Indicador definido.
-* Indicador 1 Porcentajes de estudiantes que se demoran mas de 41 minutos para llegar a su centro educativo.
- - k_qtion_2.
+##### Configuración de indicadores para la pregunta p_44.
+
+##### Indicador definido.
+  * Porcentajes de estudiantes que se demoran mas de 41 minutos para llegar a su centro educativo.
+  
+##### Formula.
+  * Numero de encuestas donde se selecciona 2 como respuesta / Total de encuestas x Barrio.
+
 ```{r}
 if(exists("ECV_EDUCACION_KPI"))rm(ECV_EDUCACION_KPI)
 #Elimino la pregunta anterior
@@ -300,7 +314,7 @@ ECV_EDUCACION$p_44[ECV_EDUCACION$p_44 %in% c("-99","-98","-88","1","2")] <- '1'
 ECV_EDUCACION$p_44[ECV_EDUCACION$p_44 %in% c("3","4","5")] <- '2'
 
 ```
-Generacio de indicador para p_44
+Generación de indicador para p_44
 ```{r}
 ECV_EDUCACION_KPI <- get_indicadores_ei(ECV_EDUCACION,"p_44")
 ECV_EDUCACION_KPI %>% filter(p_44 == '2') -> ECV_EDUCACION_KPI
@@ -310,9 +324,9 @@ ECV_EDUCACION_KPI %>% select(comuna,barrio,p_44,k_qtion_2) %>% group_by(comuna,b
 head(ECV_EDUCACION_kp44)
 ```
 
-### Desarrollo de las preguntas Dimension Educación
 
-#### p_45
+
+### Pregunta de la encuesta p_45
 #### ¿Último nivel de estudio aprobado (Titulo)?
 ##### Posibles respuestas a la pregunta.
   * -99	No responde
@@ -329,11 +343,8 @@ head(ECV_EDUCACION_kp44)
   * 9	Maestria
       
 ##### Variable que se desea medir.
-###### Último titulo obtenido por los encuestados en los barrios de Medellín.
-
-#### Configuración de indicadores para la pregunta p_45.
-Indicador definido.
-* Indicador 1 Porcentaje de personas con educacion superior 6,7,8,9.
+##### Indicador.
+  * Porcentaje de personas con educacion superior (respuestas 6,7,8,9).
 
 ```{r}
 if(exists("ECV_EDUCACION_KPI"))rm(ECV_EDUCACION_KPI)
@@ -556,32 +567,45 @@ grid.arrange(r_1,r_2,r_3,r_4,ncol = 2)
 
 ```
 
-Antes de iniciar los analisis de los grupos, se realizo un proceso de calculo de los minimos, maximos y media de la data real recogida en las encuestas con el proposito de realizar unas graficos de radar y poder hacer un analísis que nos permita entregar mayor detalle de lo que sucede en cada cluster. Al realizar los graficos a simple vista encontramos que existen varios indicadores que realmente no aportan mucho en el momento de definir los grupos. Tambien se procede a consultar los indicadores fundamentales que nos permiten validar la fortaleza del modelo, garantizando la menor varianza dentro del cluster (within_SS) y la maxima varianza entre los grupos (between_SS) y así calculando su ajuste.
+Antes de iniciar los analisis de los grupos, se realizo un proceso de calculo de los minimos, maximos y media de la data real recogida en las encuestas con el proposito de realizar unos graficos de radar y poder hacer un analísis que nos permita entregar mayor detalle de lo que sucede en cada cluster. Al revisar los graficos a simple vista encontramos que existen varios indicadores que realmente no aportan mucho en el momento de definir los grupos. Tambien se procede a consultar los indicadores fundamentales que nos permiten validar la fortaleza del modelo, garantizando la menor varianza dentro del cluster (within_SS) y la maxima varianza entre los grupos (between_SS) y así calculando su ajuste.
 
 
-between_SS = 860.3908
-total_SS = 1854
-between_SS / total_SS (Varianza de la data) =  46,40272%
+  + between_SS = 860.3908
+  + total_SS = 1854
+  + between_SS / total_SS (Varianza de la data) =  46,40272%
 
-```{r}
 
-kmeans_4$withinss[1]
-kmeans_4$betweenss[1] / kmeans_4$totss
+En este caso el ajuste tiene un valor bajo. Aquí tenemos 2 alternativas para aumentar el nivel del ajuste :
 
-```
-
-En este caso la XXXX tiene un valor muy bajo. Aquí tenemos 2 alternativas para aumentar el nivel de xxxx.
-  + Aumentar el tamaño de K, pero aquí corremos el riesgo de perder el equilibrio de los grupos pues si aumentamos el K lo que se hacemos es divider más los grupos hasta que el valor de las varianzas de los grupos sea igual total de todas la varianza y no estariamos respetando los graficos recomendados en la prueba del codo donde nos recomienda un k de grupos optimo.
+  + Aumentar el tamaño de K, pero con esta alternativa corremos el riesgo de perder el equilibrio de los grupos pues si aumentamos el K lo que hacemos es dividir más los grupos hasta que el valor de las varianzas de los grupos sea igual al total de todas las varianzas y no estariamos respetando los graficos que recomiendan un k de grupos optimo.
   
-  + Disminuir la cantidad de variables, dejando solo las variables que realmente aportan a la definición de los grupos. En este caso se generara un metodo de PCA para encontrar dichas dimensiones con el poder de determinacion de grupo mediante el calculo de su porcentaje de variación.
+  + Disminuir la cantidad de variables dejando solo las variables que realmente aportan a la definición de los grupos. En este caso se utilizará PCA para encontrar los componentes que puedan tener un mayor porcentaje de determinacion de los grupos.
   
+Se decide realizar un analisis de componentes mediante la aplicación de PCA al conjunto de indicadores.
+
+#### Analísis de PCA
+
 ```{r}
 fviz_eig(prcomp(ECV_FINAL_EDU[,2:7]) , addlabels=TRUE, main = "PCA Indicadores de Educación", ylab ="Porcentaje de explicacion de los Indicadores", xlab = "Indicadores")
 ```
 
-La grafica generada del PCA donde calcula los porcentajes de explicación nos muestra que existen variables las cuales tiene muy poco poder de explicación para definir los grupos. Realizando un camparativo entre los graficos, Radar y PCA encontramos que K_37 (Porcentaje de personas que estudiaron en este año.) y K_38 (Porcentaje de  desescolarización debido a la falta de garantias en barrios de Medellín.) no son determinantes en el momento de definir los grupos.
+Al realizar el proceso de PCA en el grafico vemos que los compenentes 1, 2 y 3 explican el 96% de los cluster. Para poder identificar cuales indicadores componen dichos componentes realizamos un proceso de contribución.
 
-Se procedera a Eliminar los indicadores y correr de nuevo el algoritmo K-means y determinar su ajuste.
+```{r}
+c_1 <-  factoextra::fviz_contrib(prcomp(ECV_FINAL_EDU[,2:7]) , choice = "var", axes = 1, top = 6, title = "Componente-1")
+c_2 <- factoextra::fviz_contrib(prcomp(ECV_FINAL_EDU[,2:7]) , choice = "var", axes = 2, top = 6, title = "Componente-2")
+c_3 <- factoextra::fviz_contrib(prcomp(ECV_FINAL_EDU[,2:7]) , choice = "var", axes = 3, top = 6, title = "Componente-3")
+
+grid.arrange(c_1,c_2,c_3)
+
+```
+
+Con el proceso de contribución encontramos que los indicadores k_37 y k_38 no aportan nada en la composición de los grupos en ninguno de los 3 componentes seleccionados. Es por esto que para seguir el analisis trabajaremos con los siguientes indicadores:
+
+  + k_35 Nivel de Analfabetismo en los Barrios de Medellín.
+  + k_43 Porcentaje de estudiantes que utilizan el transporte publico para dirigirse al centro educativo?
+  + k_44 Porcentajes de estudiantes que se demoran mas de 41 minutos para llegar a su centro educativo.
+  + k_45 Porcentaje de personas con educacion superior
 
 
 ```{r}
@@ -591,8 +615,11 @@ ECV_FINAL_EDU$k_37 <- NULL
 ECV_FINAL_EDU$k_38 <- NULL
 ECV_FINAL_EDU_SCALE <- tibble::column_to_rownames(ECV_FINAL_EDU, var = "barrio")
 ECV_FINAL_EDU_SCALE <- scale(ECV_FINAL_EDU_SCALE)
-head(ECV_FINAL_EDU_SCALE)
 ```
+
+### Generación de los Clusters.
+Nuevamente se generan los clusters con la nueva parametrización de indicadores con K = 4. Obteniendo.
+
 ```{r}
 ECV_FINAL_EDU_KMEANS <- ECV_FINAL_EDU
 set.seed(1234)
@@ -608,7 +635,9 @@ kmeans_5 <- kmeans(ECV_FINAL_EDU_SCALE, 5, iter.max = 1000, nstart = 10)
 fviz_cluster(kmeans_4,geom = "point",ECV_FINAL_EDU_SCALE) + theme_bw()
 ```
 
-Después de eliminar los dos indicadores que no tenian ningun poder explicativo para los grupos, vemos nuevamente que en el grafico de cluster los grupos estan más definidos y no solapan tanto como en la primera corrida del modelo.
+
+
+Después de eliminar los dos indicadores que no tenian ningun poder explicativo para los grupos, vemos nuevamente que en el grafico de cluster los grupos estan más definidos y no se solapan tanto como en la primera corrida del modelo.
 
 Revisando de nuevo el indicador propio de evaluación, tenemos :
 
@@ -616,8 +645,6 @@ Revisando de nuevo el indicador propio de evaluación, tenemos :
 between_SS = 747.8616 se encuentra un
 total_SS = 1236
 between_SS / total_SS (Varianza de la data) =  60.5066%
-
-
 
 De esta forma, se procede entonces a generar de nuevo los graficos de radar.
 
@@ -732,40 +759,73 @@ grid.arrange(r_1,r_2,r_3,r_4,ncol = 2)
 
 ##### Indicadores claves para analisis.
 
-Después del ejercicio realizado para eliminar indicadores se tienen los siguientes definidos para el analisis.
+Después del ejercicio realizado para eliminar indicadores, estas fueron las preguntas finales.
 
   + p_35 Nivel de Analfabetismo en los Barrios de Medellín.
+  
   + p_43 Porcentaje de estudiantes que utilizan el transporte publico para dirigirse al centro educativo?
+  
   + p_44 Porcentajes de estudiantes que se demoran mas de 41 minutos para llegar a su centro educativo.
+  
   + p_45 Porcentaje de personas con educacion superior
   
 
-Los grupos generados por el algoritmo K-means para la encuesta que estudia la dimensión de educación para el estudio Medellín como Vamos, muestra que la educación en los barrios de Medellin se dividen en 4 grupos donde son determinados por :
-  * El nivel de analfabetismo.
-  * El medio de transporte en el que se dirigen a su sitio de educación.
-  * El tipo que demoran en ir a su lugar de estudio.
-  * El nivel de estudios superiores que la persona curso.
-  
-El Cluster número 1, se diferencia de los demas grupos porque las personas que se dirigen a estudar su mayoria no se demoran más de 41 minutos, menos del 3% de los encuentados. Solo un poco más del 10% tienen estudios superiores, menos del 10% utilizan el trasporte publico para dirigirse al sitio de estudio, temas comprensible debido a que menos del 3% estudian en sitios lejanos. El nivel de analfabetismo ronda en un 7% de las perosonas encuestadas.
-El cluster 1 esta comprenido en 130 barrios dispersos en todo el valle de la aburra, distribuidas en comunas de.
+Los grupos generados por el algoritmo K-means para la encuesta que estudia la dimensión de educación para el estudio Medellín como Vamos, muestra que la educación en los barrios de Medellin se dividen en 4 grupos que son determinados por :
 
-ALTA VISTA,ARANJUEZ,BELEN,BUENOS AIRES,CASTILLA,DOCE DE OCTUBRE,EL POBLADO,GUAYABAL,LA AMERICA,LA CANDELARIA,LAURELES-ESTADIO,MANRIQUE,PALMITAS,ROBLEDO,SAN ANTONIO DE PRADO,SAN CRISTOBAL,SAN JAVIER,SANTA ELENA,VILLA HERMOSA
+  + El nivel de analfabetismo.
+  + El medio de transporte en el que se dirigen a su sitio de educación.
+  + El tipo que demoran en ir a su lugar de estudio.
+  + El nivel de estudios superiores que la persona curso.
+  
+  
+El Cluster número 1, se diferencia de los demas grupos porque las personas que se dirigen a estudar su mayoria no se demoran más de 41 minutos, solo menos del 3% de los encuentados tienen esta particularidad. Solo un poco más del 10% tienen estudios superiores, menos del 10% utilizan el trasporte publico para dirigirse al sitio de estudio, temas comprensible debido a que menos del 3% estudian en sitios lejanos. El nivel de analfabetismo ronda en un 7% de las perosonas encuestadas.
+El cluster 1 esta comprenido en 130 barrios dispersos en todo el valle de la aburra. Los barrios son : 
+
+
+```{r}
+writeLines("td, th { padding : 6px } th { background-color : brown ; color : white; border : 1px solid white; } td { color : brown ; border : 1px solid brown }", con = "mystyle.css")
+dset1 <- subset(ECV_FINAL_EDU_KMEANS, cluster=="1") %>% select(barrio)
+knitr::kable(dset1, format = "html")
+
+```
+
+
 
 Este cluster comprenden comunas donde la mayoria de sus habitantes pertenecen a una clase obrera trabajadora.
 
-El Cluster numero 2, se diferencia de los demas grupos debido a que el 23% las personas que viven en estos barrios, utilizan el transporte publico para dirigirse al lugar de estudio. La segunda variable más notoria es el analfabetismo, con al rededor del 18%. Las dos variables restantes tiene un comportamiento menor.
+El Cluster numero 2, se diferencia de los demas grupos debido a que el 23% las personas que viven en estos barrios, utilizan el transporte publico para dirigirse al lugar de estudio. La segunda variable más notoria es el analfabetismo, con al rededor del 18%. Las dos variables restantes tienen un comportamiento menor.
 El cluster 2 esa conformado por 3 barrios estos son:
-El carmelo, La Ilusión y San Jose de la Montaña, todos pertenecientes a la comuna de San Cristobal. Este clustes nos permite concluir que hace fata una institucion educativa cerca a la comunidad que permita elevar el nivel de vida de los habitantes pues gran cantidad de personas deben deplazarse mas de 41 minutos a un sitio de educacion.
 
-El Clustes 3, Este grupo se caracteriza porque tiene los indicadores más regulares que los otros grupos, tres de cuatro indicadores de estudio tiene un comportamiento parejo, el analfabetismo tiene un leve incremento con respecto a los demas. El indicador k_45 (Estudios superiores) tiene un leve decenso. Esto puede ocurrir debido a que las personas de estos barrios, de mayores posibilidades.
-Los barrios que hacen parte de este cluster estan comprendidos en las siguientes comunas:
-ARANJUEZ,BELEN,BUENOS AIRES,CASTILLA,DOCE DE OCTUBRE,GUAYABAL,LA CANDELARIA,MANRIQUE,PALMITAS,POPULAR
-ROBLEDO,SAN ANTONIO DE PRADO,SAN CRISTOBAL,SAN JAVIER,SANTA CRUZ,SANTA ELENA,VILLA HERMOSA
+```{r}
+writeLines("td, th { padding : 6px } th { background-color : brown ; color : white; border : 1px solid white; } td { color : brown ; border : 1px solid brown }", con = "mystyle.css")
+dset1 <- subset(ECV_FINAL_EDU_KMEANS, cluster=="2") %>% select(barrio)
+knitr::kable(dset1, format = "html")
+
+```
+
+
+Este clustes nos permite concluir que hace fata una institucion educativa cerca a la comunidad que permita elevar la calidad de vida de los habitantes pues gran cantidad de personas deben deplazarse mas de 41 minutos a un sitio de educacion.
+
+El Clustes 3, Este grupo se caracteriza porque tiene los indicadores más regulares que los otros grupos, tres de cuatro indicadores de estudio tiene un comportamiento parejo, el analfabetismo tiene un leve incremento con respecto a los demas. El indicador k_45 (Estudios superiores) tiene un leve decenso. Esto puede ocurrir debido a que las personas de estos barrios son de mayores posibilidades.
+Los barrios que hacen parte de este cluster son:
+
+```{r}
+writeLines("td, th { padding : 6px } th { background-color : brown ; color : white; border : 1px solid white; } td { color : brown ; border : 1px solid brown }", con = "mystyle.css")
+dset1 <- subset(ECV_FINAL_EDU_KMEANS, cluster=="3") %>% select(barrio)
+knitr::kable(dset1, format = "html")
+
+```
+
 
 El Cluster 4, Este cluster se difencia de los otros grupos por su bajo porcentaje de analfabetismo y su alto porcentaje de personas con educación superior. Las personas que viven en los barrios pertenecientes a este grupo utilizan poco el transporte urbano y en promedio sedemoran poco para llegar a su lugar de estudio. Este grupo al parecer corresponde a u grupo aspiracional debido a que las personas con mejores oportunidades para tener estudio superiores llegan a este grupo.
-El cluster 4, comprenden 70 barrios ubicados en las siguientes comunas.
+Los barrios que hacen parte de este cluster son: 
 
-ALTA VISTA,BELEN,BUENOS AIRES,EL POBLADO,LA AMERICA,LA CANDELARIA,LAURELES-ESTADIO,ROBLEDO,SANTA ELENA
+```{r}
+writeLines("td, th { padding : 6px } th { background-color : brown ; color : white; border : 1px solid white; } td { color : brown ; border : 1px solid brown }", con = "mystyle.css")
+dset1 <- subset(ECV_FINAL_EDU_KMEANS, cluster=="4") %>% select(barrio)
+knitr::kable(dset1, format = "html")
+
+```
 
 
 #### Grafico apilado de barras
@@ -779,10 +839,8 @@ ggplot(df_c_t,aes(x=cluster, y=valor, fill=pregunta)) + geom_bar( stat="identity
 
 
 
-```{r}
-library(stringr)
-library(tidyr)
-library(rgdal)
+```{r results='hide', message=FALSE, warning=FALSE}
+
 
 #ECV_FINAL_EDU_KMEANS["barrio"] <- gsub("-","/",ECV_FINAL_EDU_KMEANS$barrio)
 ECV_FINAL_EDU_KMEANS <- separate(ECV_FINAL_EDU_KMEANS,col = barrio,into = c("comuna","barrio"),sep="/")
@@ -792,7 +850,7 @@ ECV_FINAL_EDU_KMEANS <- separate(ECV_FINAL_EDU_KMEANS,col = barrio,into = c("com
 
 
 
-```{r}
+```{r results='hide', message=FALSE, warning=FALSE}
 barrios_med <- readOGR("~/Documents/GitHub/TAE_T1/Barrio_Vereda/Barrio_Vereda.shp",layer="Barrio_Vereda")
 nombres_barrios <- iconv(barrios_med@data$NOMBRE,"UTF-8","ISO_8859-1")
 #head(nombres_barrios)
@@ -803,9 +861,6 @@ nombres_barrios <- iconv(barrios_med@data$NOMBRE,"UTF-8","ISO_8859-1")
 
 ```{r}
 sub_ <- ECV_FINAL_EDU_KMEANS[,c("barrio","cluster")]
-
-head(ECV_FINAL_EDU_KMEANS)
-
 ```
 
 ```{r}
@@ -827,7 +882,7 @@ library(DataCombine)
 Replaces <- data.frame(from = c("º ", "ú", "ó", "í", "é", "á", "Á", "ñ"), to = c("o.", "Ãº", "Ã³", "Ã", "Ã©", "Ã¡", "Ã\u0081", "Ã±"))
 sub_ <- FindReplace(data = sub_, Var = "barrio", replaceData = Replaces,
                      from = "from", to = "to", exact = FALSE)
-head(sub_)
+
 ```
 
 
@@ -910,7 +965,7 @@ nom_bar <- merge(barrios_med, sub_[!duplicated(sub_$barrio), ], by.x="NOMBRE", b
 
 ```{r}
 nombres <- data.frame(nom_bar$NOMBRE)
-print(sum(is.na(nom_bar$cluster)))
+
 ```
 
 

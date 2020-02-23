@@ -1,31 +1,59 @@
 ---
 title: "Agrupamientos de los barrios de Medellín"
-author: Santiago Arboleda Quiroz, Olga Lucía Montoya Pérez, Alberto Ramirez Velasquez,
-  Juan David Tangarife Patino
-date: "Semestre 02-2019"
-output:
-  html_document:
-    df_print: paged
 ---
 
 En este trabajo se abordará el problema de agrupar los barrios de Medellín de acuerdo a distintas dimensiones y
 analizar espacialmente las agrupaciones.
 
 
-** Dimensión Movilidad **
+**Dimensión Movilidad Vial y Espacio Público**
 
-La dimensión Movilidad mide determina en la encuesta de Calidad de Vida, cómo se mueven los Medellinenses. Asi mismo, el tiempo que les toma ir a trabajar, el medio de transporte predominante de las personas que trabajan y la percepción sobre la malla vial, cobertura y calidad del transporte público.
+La dimensión Movilidad Vial y Espacio Público determina en la encuesta de Calidad de Vida, cómo se mueven los Medellinenses. Asi mismo, el tiempo que les toma ir a trabajar, el medio de transporte predominante de las personas que trabajan y la percepción sobre la malla vial, cobertura y calidad del transporte público.
 
 
 
 * P_83		¿Cuál es el medio de transporte utilizado predominante para dirigirse al sitio de su empleo principal?
+
+Posibles respuestas:
+
+* No responde
+* No aplica
+* Otro.
+* Caminando
+* Bicicleta
+* Moto
+* Bus/Buseta/Ejecutivo
+* Transporte Informal
+* Taxi o colectivo
+* Transporte particular
+* Metro - cable
+* Sistema Integrado de Transporte (SIT).
+* Ferrocarril
+* Aéreo
+* Caballo (bestia)
+* Lancha, Canoa, Bote
+
+
+
   * Indicador: Porcentaje de personas que usan bicicleta para ir a su empleo principal
   * Formula: Número de personas que usan bicicleta para ir a trabajar / Total Encuestados 
-  
-  
+
 * P_84		¿Cuánto tiempo tardan en llegar al sitio de trabajo?
+ 
+Posibles Respuestas:
+
+* No aplica
+* De 0 a 20 minutos
+* De 21 a 40 minutos
+* De 41 a 60 minutos
+* De 61 a 80 minutos
+* Más de 81 minutos
+ 
+ 
+ 
   * Indicador: Porcentaje de personas que tardan en llegar al trabajo mas de una hora
   * Formula: Numero de personas que tardan mas de una hora para ir a trabajar / Cantidad Encuestados
+  
   
   
 * P_212		¿Cuántos vehículos particulares en funcionamiento tiene este hogar? (no incluye vehículo de servicio público o utilizado para generar ingresos) Vehiculo o auto
@@ -36,117 +64,157 @@ La dimensión Movilidad mide determina en la encuesta de Calidad de Vida, cómo 
 
 
 * P_213		¿Cuántos vehículos particulares en funcionamiento tiene este hogar? (no incluye vehículo de servicio público o utilizado para generar ingresos) Moto o motoneta
+
+  * Indicador: Promedio de vehiculos en el hogar (Moto)
+  * Formula: Cantidad de motos en los hogares / Cantidad de hogares
+
+
 * P_214		¿Cuántos vehículos particulares en funcionamiento tiene este hogar? (no incluye vehículo de servicio público o utilizado para generar ingresos) Bicicleta
+
+  * Indicador: Promedio de vehiculos en el hogar (Bicicleta)
+  * Formula: Cantidad de bicicletas en los hogares / Cantidad de hogares
+
+
+
 * P_318		Califique Usted en una escala desde 1 hasta 5, la situación en su barrio o vereda, sobre: La pavimentación y señalización de las vias
+
+Posibles respuestas:
+ 
+* Muy mala
+* Mala
+* Aceptable
+* Buena
+* Muy buena
+ 
+ 
+ 
+  * Indicador: Calificación promedio del estado de la infraestrucutra vial
+  * Formula: Sumatoria de las respuestas / Cantidad de Encuestados
+
+
+
 * P_321		Califique Usted, en una escala desde 1 hasta 5, la cobertura en el transporte público en su sector, barrio o vereda en los últimos 12 meses
+
+Posibles respuestas:
+ 
+* Muy mala
+* Mala
+* Aceptable
+* Buena
+* Muy buena
+
+
+  * Indicador: Calificación promedio de la cobertura del transporte público
+  * Formula: Sumatoria de las respuestas / Cantidad de Encuestados
+  
+  
+
 * P_322		Y califique en una escala desde 1 hasta 5, la calidad de ese transporte público en su sector, barrio o vereda
+
+Posibles respuestas:
+ 
+* Muy mala
+* Mala
+* Aceptable
+* Buena
+* Muy buena
+
+ 
+  * Indicador: Calificación promedio de la Calidad del transporte publico en el barrio
+  * Formula: Sumatoria de las respuestas / Cantidad de Encuestados
+
+
+
+El insumo principal de este trabajo son los datos abiertos del portal Medata y en particular la Encuesta de Calidad de Vida Medellín Cómo vamos.
+
+```{r}
+ECV <- read.csv("./dataSet/encuesta_calidad_vida.csv", header = TRUE, sep=";", encoding = "UTF-8")
+```
+
+
 
 
 Librerias escenciales para el analisis de informacion
 ```{r}
 library(dplyr)
 library(ggplot2)
+
+# Librería creada para automatizar las consultas y para renombrar las columnas
 library(Utiltae)
+
 library(lazyeval)
 library('sqldf')
 library(rgdal)
+library(factoextra)
+library(GGally)
+library(plotly)
+library(stringr)
+library(tidyr)
 ```
 
 
 
-El insumo principal de este trabajo son los datos abiertos del portal Medata y en particular la Encuesta de Calidad de Vida Medellín Cómo vamos.
-```{r}
-ECV <- read.csv("./dataSet/encuesta_calidad_vida.csv", header = TRUE, sep=";", encoding = "UTF-8")
-```
+Se procede a renombrar las cabeceras del dataframe del set de datos
 
-Se procede a normalizar las cabeceras del dataframe del set de datos
 ```{r}
 ECV <- setNames(ECV,set_dataSet_names(names(ECV)))
 ```
 
-1. Caracterización de las dimensiones para la dimensión ALIMENTACION
+
+**1. Caracterización de las dimensiones para la dimensión Movilidad Vial y Espacio Público**
 
 
-
-
-```{r}
-#summary(ECV)
-```
-
-Para la dimensión de MOVILIDAD  se toman las preguntas:
-P_83		¿Cuál es el medio de transporte utilizado predominante para dirigirse al sitio de su empleo principal?
-P_84		¿Cuánto tiempo tardan en llegar al sitio de trabajo?
-P_212		¿Cuántos vehículos particulares en funcionamiento tiene este hogar? (no incluye vehículo de servicio público o utilizado para generar ingresos) Vehiculo o auto
-P_213		¿Cuántos vehículos particulares en funcionamiento tiene este hogar? (no incluye vehículo de servicio público o utilizado para generar ingresos) Moto o motoneta
-P_214		¿Cuántos vehículos particulares en funcionamiento tiene este hogar? (no incluye vehículo de servicio público o utilizado para generar ingresos) Bicicleta
-P_318		Califique Usted en una escala desde 1 hasta 5, la situación en su barrio o vereda, sobre: La pavimentación y señalización de las vias
-P_321		Califique Usted, en una escala desde 1 hasta 5, la cobertura en el transporte público en su sector, barrio o vereda en los últimos 12 meses
-P_322		Y califique en una escala desde 1 hasta 5, la calidad de ese transporte público en su sector, barrio o vereda
+Construcción del dataframe con las preguntas de interes para la dimensión Movilidad Vial y Espacio Público
 
 ```{r}
-
 ECV_MOVILIDAD<- ECV[,c("encuesta","comuna","barrio","estrato","p_83","p_84","p_212","p_213","p_214","p_318","p_321","p_322")]
-
 ```
 
 Revisemos como es el comportamiento de los datos seleccionados
+
 ```{r}
 summary(ECV_MOVILIDAD)
 ```
 
-Eliminamos las filas dónde todas las columnas sean NULL
+No existen valores nulos dentro de las preguntas de Movilidad
 
 ```{r}
 ECV_MOVILIDAD_DEP <- subset(ECV_MOVILIDAD,p_83 != 'NULL' & p_84 != 'NULL' & p_212 != 'NULL' & p_213 != 'NULL' & p_214 != 'NULL' & p_318 != 'NULL' & p_321 != 'NULL' & p_322 != 'NULL')
 nrow(ECV_MOVILIDAD_DEP)
 ```
-```{r}
-summary(ECV_MOVILIDAD_DEP)
+
+
+Se procede a realizar el cálculo de cada uno de los indicadores definidos para la dimensión Movilidad Vial y Espacio Público
+
+
+```{r include = FALSE}
+knitr::opts_chunk$set(echo=FALSE)
 ```
 
-Definiciones:
-
-################################## Solucion de Preguntas -  Consultas ###################################
-
-Dimensión Movilidad.
-
-P_83: ¿Cuál es el medio de transporte utilizado predominante para dirigirse al sitio de su empleo principal?
-Indicador: Porcentaje de personas que usan bicicleta para ir a su empleo principal
-Formula: 
-  Total de personas BICICLETA / Total Encuestados P_83 *100
-
+P_83: Porcentaje de personas que usan bicicleta para ir a su empleo principal
 
 ```{r}
-# CAST((SUM(p_83) / totalEncuestadosE * 100) AS DOUBLE)
-
 ECV_MOVILIDAD_P83 <- get_indicadores_ei(ECV_MOVILIDAD_DEP,'p_83')
-CONS_P83 <- sqldf("SELECT comuna, barrio, CAST (SUM(totalRespuestaE) AS REAL) / TotalB *100 AS P83_IND
+CONS_P83 <- sqldf("SELECT comuna, barrio, CAST (SUM(totalRespuestaE) AS REAL) / TotalB*100 AS P83_IND
                   FROM ECV_MOVILIDAD_P83  
                   WHERE p_83 = '2' 
                   GROUP BY comuna, barrio")
 #CONS_P83["ind"] <- CONS_P83$`SUM(totalRespuestaE)` / CONS_P83$TotalB * 100
 ```
 
-P_84: ¿Cuánto tiempo tardan en llegar al sitio de trabajo?
-Indicador: Porcentaje de personas que tardan en llegar al trabajo mas de una hora
-Formula: 
-  Sumatoria de los tiempos / Total Encuestados P_84
+P_84: Porcentaje de personas que tardan en llegar al trabajo mas de una hora
 
 
 ```{r}
 ECV_MOVILIDAD_P84 <- get_indicadores_ei(ECV_MOVILIDAD_DEP,'p_84')
-CONS_P84 <- sqldf("SELECT comuna, barrio, CAST (SUM(totalRespuestaE) AS REAL) / TotalB *100 AS P84_IND
+CONS_P84 <- sqldf("SELECT comuna, barrio, CAST (SUM(totalRespuestaE) AS REAL) / TotalB*100 AS P84_IND
                   FROM ECV_MOVILIDAD_P84  
                   WHERE p_84 = '4' OR p_84 = '5' 
                   GROUP BY comuna, barrio")
-#CONS_P84["P84_IND"] <- CONS_P84$`SUM(totalRespuestaE)` / CONS_P84$TotalB * 100
 ```
 
 
-P_212: ¿Cuántos vehículos particulares en funcionamiento tiene este hogar? (no incluye vehículo de servicio público o utilizado para generar ingresos) Vehiculo o auto
-Indicador: Promedio de vehiculos en el hogar (Vehiculo o auto)
-Formula: 
-  Sumatoria de las respuestas Vehiculo o auto / Total Encuestados P_212
+P_212: Promedio de vehiculos en el hogar (Vehiculo o auto)
 
 
 ```{r}
@@ -155,14 +223,11 @@ CONS_P212 <- sqldf("SELECT comuna, barrio, SUM(cast ((p_212) as real)*(totalResp
                   FROM ECV_MOVILIDAD_P212  
                   WHERE p_212 > 0 
                   GROUP BY comuna, barrio")
-#CONS_P212["ind"] <- CONS_P212$nuevo
+
 
 ```
 
-P_213: ¿Cuántos vehículos particulares en funcionamiento tiene este hogar? (no incluye vehículo de servicio público o utilizado para generar ingresos) Moto o motoneta
-Indicador: Promedio de vehiculos en el hogar (Moto)
-Formula: 
-  Sumatoria de las respuestas Moto / Total Encuestados P_213
+P_213: Promedio de vehiculos en el hogar (Moto)
 
 
 ```{r}
@@ -171,18 +236,10 @@ CONS_P213 <- sqldf("SELECT comuna, barrio, SUM(cast ((p_213) as real)*(totalResp
                   FROM ECV_MOVILIDAD_P213  
                   WHERE p_213 > 0
                   GROUP BY comuna, barrio")
-#CONS_P212["ind"] <- CONS_P213$`SUM(p_213)` / CONS_P213$`SUM(totalEncuestadosE)` 
+
 ```
 
-```{r}
-#ECV_MOVILIDAD_P213 %>% group_by(barrio) %>% summarise(sum(p_213 * totalRespuestaE)/sum(totalRespuestaE)  ) -> data_hogar
-```
-
-
-P_214: ¿Cuántos vehículos particulares en funcionamiento tiene este hogar? (no incluye vehículo de servicio público o utilizado para generar ingresos) Bicicleta
-Indicador: Promedio de vehiculos en el hogar (Bicicleta)
-Formula: 
-  Sumatoria de las respuestas Bicicleta / Total Encuestados P_214
+P_214: Promedio de vehiculos en el hogar (Bicicleta)
 
 
 ```{r}
@@ -193,10 +250,7 @@ CONS_P214 <- sqldf("SELECT comuna, barrio, SUM(cast ((p_214) as real)*(totalResp
                   GROUP BY comuna, barrio")
 ```
 
-P_318: Califique Usted en una escala desde 1 hasta 5, la situación en su barrio o vereda, sobre: La pavimentación y señalización de las vias
-Indicador: Calificación promedio del estado de la infraestrucutra vial
-Formula: 
-  Sumatoria de las Calificaciones / Total Encuestados P_318 
+P_318: Calificación promedio del estado de la infraestrucutra vial
 
 
 ```{r}
@@ -207,10 +261,9 @@ CONS_P318 <- sqldf("SELECT comuna, barrio, SUM(cast ((p_318) as real)*(totalResp
                   GROUP BY comuna, barrio")
 ```
 
-P_321: Califique Usted, en una escala desde 1 hasta 5, la cobertura en el transporte público en su sector, barrio o vereda en los últimos 12 meses
-Indicador: Calificación promedio de la cobertura del transporte público
-Formula: 
-  Sumatoria de las respuestas "Muy buena" / Total Encuestados P_321 *100
+
+P_321: Calificación promedio de la cobertura del transporte público
+
 
 
 ```{r}
@@ -221,10 +274,8 @@ CONS_P321 <- sqldf("SELECT comuna, barrio, SUM(cast ((p_321) as real)*(totalResp
                   GROUP BY comuna, barrio")
 ```
 
-P_322: Y califique en una escala desde 1 hasta 5, la calidad de ese transporte público en su sector, barrio o vereda
-Indicador: Porcentaje de personas que piensan que la calidad del transporte publico en el sector es "Aceptable"
-Formula: 
-  Sumatoria de las respuestas Aceptable" / Total Encuestados P_322 *100
+
+P_322: Calificación promedio de la Calidad del transporte publico en el barrio
 
 
 ```{r}
@@ -236,7 +287,12 @@ CONS_P322 <- sqldf("SELECT comuna, barrio, SUM(cast ((p_322) as real)*(totalResp
 
 ```
 
-```{r}
+```{r  include = TRUE}
+knitr::opts_chunk$set(echo=TRUE)
+```
+
+```{r include = FALSE}
+knitr::opts_chunk$set(echo=FALSE)
 ECV_MOVILIDAD_FINAL <- data.frame(unique(ECV_MOVILIDAD[,c("comuna", "barrio")]))
 ECV_MOVILIDAD_FINAL <- merge(ECV_MOVILIDAD_FINAL, CONS_P83, by = c("comuna", "barrio"), all.x = TRUE)
 ECV_MOVILIDAD_FINAL <- merge(ECV_MOVILIDAD_FINAL, CONS_P84, by = c("comuna", "barrio"), all.x = TRUE)
@@ -249,42 +305,62 @@ ECV_MOVILIDAD_FINAL <- merge(ECV_MOVILIDAD_FINAL, CONS_P322, by = c("comuna", "b
 
 ```
 
+
+
+**2. Agrupamiento**
+
+
+* Imputación de los valores Nulos
+
+Para efectos de la ejecución de los modelos, los valores del data frame ECV_MOVILIDAD_FINAL que sean nulos se llenan con 0 dado que cuando se presenta un valor NAN significa que el indicador no aplica para el barrio y el cero lo representa
+
+```{r  include = TRUE}
+knitr::opts_chunk$set(echo=TRUE)
+```
+
+
 ```{r}
 ECV_MOVILIDAD_FINAL[is.na(ECV_MOVILIDAD_FINAL)] <- 0
+```
+
+
+
+* Normalizamos los datos
+
+Dado que los indicadores del dataframe ECV_MOVILIDAD_FINAL se encuentran en función de hogares y personas encuestadas es necesario poner todos los indicadores en la misma escala.
+
+
+Utilizaremos la técnica de Agrupamiento Kmeans, la cual hace parte del conjunto de algoritmos de aprendizaje no supervisado.
+
+
+
+
+```{r}
+#Kmeans no acepta variables categoricas, el identificador del barrio se convierte en nombre de filas para que no sean consideras por el algoritmo
 ECV_MOVILIDAD_FINAL$barrio <- paste(ECV_MOVILIDAD_FINAL$comuna, ECV_MOVILIDAD_FINAL$barrio, sep = "/")
 ECV_MOVILIDAD_FINAL$comuna <- NULL
 
 ```
 
 
-
-################################## Fin Preguntas ###################################
-
-
-################################# Agrupamiento #####################################
-
-K-MEANS 
-
-
-Normalizamos los datos
-
 ```{r}
 ECV_MOVILIDAD_SCALE <-  tibble::column_to_rownames(ECV_MOVILIDAD_FINAL, var = ("barrio"))
 ECV_MOVILIDAD_SCALE <-  scale(ECV_MOVILIDAD_SCALE)
 ```
-```{r}
-#any(is.na(ECV_MOVILIDAD_FINAL))
-#any(is.finite(ECV_VIVIENDA_BARRIO_SCALE))
+
+
+**Método del codo para determinar el k óptimo**
+
+
+Se utilizan el diferentes métodos para determinar el k óptimo del algoritmo de clusterización Kmeans
+
+
+```{r include = FALSE}
+knitr::opts_chunk$set(echo=FALSE)
 ```
 
 
-Método del codo para determinar el k optimo
-
-
-
 ```{r}
-library(factoextra)
-# Elbow method
 fviz_nbclust(ECV_MOVILIDAD_SCALE, kmeans, method = "wss") +
     geom_vline(xintercept = 4, linetype = 2)+
   labs(subtitle = "Elbow method")
@@ -292,31 +368,21 @@ fviz_nbclust(ECV_MOVILIDAD_SCALE, kmeans, method = "wss") +
 
 
 
-De acuerdo a la gráfica, donde se da el k con el mínimo error es cuando toma el valor de 4
+
+De acuerdo a la gráfica, el cambio de pendiente más significativo es en el k = 4
 
 
 
-Método de la siluetta para determinar el k óptimo
+**Método de la siluetta para determinar el k óptimo**
 
 ```{r}
 fviz_nbclust(ECV_MOVILIDAD_SCALE, kmeans, method = "silhouette")
 ```
 
-De acuerdo a la gráfica, donde se da el k con el mínimo error es cuando toma el valor de 2
+De acuerdo a la gráfica, donde se da el k recomendado es cuando el valor de 2
 
 
-```{r}
-# Gap statistic
-# nboot = 50 to keep the function speedy. 
-# recommended value: nboot= 500 for your analysis.
-# Use verbose = FALSE to hide computing progression.
-# The gap statistic compares the total intracluster variation for different values of k with their expected values under null reference distribution of the data (i.e. a distribution with no obvious clustering). The reference dataset is generated using Monte Carlo simulations of the sampling process. 
-
-
-set.seed(123)
-fviz_nbclust(ECV_MOVILIDAD_SCALE, kmeans, nstart = 50,  method = "gap_stat", nboot = 50)+
-  labs(subtitle = "Gap statistic method")
-```
+Diferencia entre los errores generados con diferentes k
 
 
 ```{r}
@@ -325,52 +391,151 @@ plot(2:10, diff(SS$data$y), type="h", main="Diferencia de Errores", xlab="k", yl
 ```
 
 
+De acuerdo a las gráficas de los diferentes metodos, se concluye que k = 7, es el k óptimo para la dimensión Movilidad, por lo cual aplicaremos el algoritmo Kmeans con dicho valor de k
 
 
-
-Aplicamos K-MEANS para el k recomendado por el método del codo 
+**Aplicamos K-MEANS para el k recomendado**
 
 ```{r}
 set.seed(42)
-kmeans_model <- kmeans(ECV_MOVILIDAD_SCALE, 5, nstart = 50)
+kmeans_model <- kmeans(ECV_MOVILIDAD_SCALE, 7, nstart = 50)
 #kmeans_model
 ```
 
-Agregar el cluster a la data original
 
-```{r}
-df_member <- cbind(ECV_MOVILIDAD_FINAL, cluster = kmeans_model$cluster)
-head(df_member)
-```
 
-Visualización de los grupos
+**Visualización de los grupos**
 
 ```{r}
 fviz_cluster(kmeans_model, data = ECV_MOVILIDAD_SCALE, geom = "point")
 ```
 
 
+
+**Los tamaños de los cluster son:**
+
 ```{r}
- fviz_cluster(kmeans_model, ECV_MOVILIDAD_SCALE, ellipse.type = "norm", geom = "point")
+kmeans_model$size
 ```
 
 ```{r}
-# Cluster size
-kmeans_model$size
+sz <- as.data.frame(kmeans_model$size)
+#sz2 <- as.data.frame(unique(kmeans_model$cluster))
+sz <- cbind(sz, cluster = unique(kmeans_model$cluster))
 ```
+
+
+
+```{r}
+library(plotly)
+
+#USPersonalExpenditure <- data.frame("Categorie"=rownames(USPersonalExpenditure), USPersonalExpenditure)
+#data <- USPersonalExpenditure[,c('Categorie', 'X1960')]
+
+p <- plot_ly(sz, labels = ~sz$cluster, values = ~sz$`kmeans_model$size`, type = 'pie') %>%
+  layout(title = 'Porcentaje de Barrios por Cluster',
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+p
+```
+
+
+
+```{r  include = TRUE}
+knitr::opts_chunk$set(echo=TRUE)
+```
+
+
+**Asignación de clusters a los barrios**
+
+```{r}
+kmeans_model
+```
+
+El modelo da un ajuste del 61.9% con k = 7.
+
+
+**Agregaamos el cluster a la data original**
+
+```{r include = FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+```
+
+```{r}
+df_member <- cbind(ECV_MOVILIDAD_FINAL, cluster = kmeans_model$cluster)
+
+```
+
+
+
+
+
+**Análisis de cada uno de los Grupos**
+
+* Centros de los clusters
+
+```{r}
+kmeans_model$centers
+```
+
+
+```{r}
+
+ECV_MOVILIDAD_KMEANS <- kmeans_model$centers
+ECV_MOVILIDAD_KMEANS <- data.frame(ECV_MOVILIDAD_KMEANS)
+ECV_MOVILIDAD_KMEANS %>% tibble::rownames_to_column("cluster") -> ECV_MOVILIDAD_KMEANS
+ECV_MOVILIDAD_KMEANS$cluster <- as.factor(ECV_MOVILIDAD_KMEANS$cluster)
+ 
+summary_cluster_means <- ggparcoord(data = ECV_MOVILIDAD_KMEANS, columns = c(2:9), groupColumn = "cluster", scale = "globalminmax", showPoints = TRUE, alphaLines = 0.5) + labs(x = "Indicador / Preguntas", y = "Medias", title = "Análisis General de los cluster de acuerdo a las preguntas de la dimensión") + theme(plot.title = element_text(size=12), axis.text=element_text(size=8))
+ggplotly(summary_cluster_means)
+```
+
+
+* Media de cada indicador por cluster
 
 ```{r}
 aggregate(ECV_MOVILIDAD_FINAL, by=list(cluster=kmeans_model$cluster), mean)
 ```
 
 
+**Grupo 1**
+
+Son barrios donde el 0.23% de sus habitantes piensan que la bicicleta es el medio de transporte predominante para ir a trabajar y el 2.75% se demoran mas de una hora dirigirse a su lugar de trabajo. Además son barrios donde en promedio sus habitantes tienen 0.38 motos por hogar y piensan que la cobertura del transporte público en sus barrios es Aceptable. 
+
+**Grupo 2**
+
+Son barrios donde el 0.25% de sus habitantes piensan que la bicicleta es el medio de transporte predominante para ir a trabajar y el 3.12% se demoran mas de una hora dirigirse a su lugar de trabajo. Además son barrios donde en promedio sus habitantes tienen 0.16 bicicletas por hogar y piensan que la calidad del transporte público en sus barrios es Buena. 
+
+**Grupo 3**
+
+Son barrios donde el 0.22% de sus habitantes piensan que la bicicleta es el medio de transporte predominante para ir a trabajar y el 1.83% se demoran mas de una hora dirigirse a su lugar de trabajo. Además son barrios donde en promedio sus habitantes tienen 0.81 carros por hogar y piensan que la calidad del transporte público en sus barrios es Buena.
+
+**Grupo 4**
+
+Son barrios donde el 0.45% de sus habitantes piensan que la bicicleta es el medio de transporte predominante para ir a trabajar y el 1.77% se demoran mas de una hora dirigirse a su lugar de trabajo. Además son barrios donde en promedio sus habitantes tienen 0.26 carros por hogar y piensan que la calidad del transporte público en sus barrios es Buena. 
+
+**Grupo 5**
+
+Son barrios donde el 25% de sus habitantes se demoran mas de una hora dirigirse a su lugar de trabajo. Además son barrios donde en promedio sus habitantes no tienen carros, en promedio tienen 0.5 bicicletas por hogar y piensan que la cobertura del transporte público en sus barrios es mala.
+
+**Grupo 6**
+
+Son barrios donde sus habitantes consideran que la cobertura y la calidad del transporte público en sus barrios es buena. Además, en promedio sus habitantes tienen 0.04 carros y el 3.57% de los mismos se demora mas de una hora para ir a su lugar de trabajo.
+
+**Grupo 7**
+
+Son barrios donde sus habitantes consideran que el estado de la infraestructura vial es mala. Además, el 3.57% de sus habitantes se demoran mas de una hora para ir a trabajar y en promedio tienen 0.13 motos por hogar.
 
 
-Mapas
+
+
+**Análisis espacial**
+
+
 
 ```{r}
-library(stringr)
-library(tidyr)
+
 #df_ <- str_split_fixed(df_member$barrio, "-", 2)
 #head(df_)
 
@@ -378,7 +543,6 @@ library(tidyr)
 
 df_member2 <- separate(df_member, 'barrio', paste("barrio", 1:2, sep="_"), sep="/", extra="drop")
 ```
-
 
 
 
@@ -400,9 +564,10 @@ rownames(sub_) <- NULL
 #head(sub_)
 ```
 
-Convertimos a minúsculas
+
 
 ```{r}
+# Convertimos a minusculas
 sub_$barrio_2 <- tolower(sub_$barrio_2)
 #head(sub_)
 ```
@@ -414,25 +579,25 @@ library(DataCombine)
 Replaces <- data.frame(from = c("º ", "ú", "ó", "í", "é", "á", "Á", "ñ"), to = c("o.", "Ãº", "Ã³", "Ã", "Ã©", "Ã¡", "Ã\u0081", "Ã±"))
 sub_ <- FindReplace(data = sub_, Var = "barrio_2", replaceData = Replaces,
                      from = "from", to = "to", exact = FALSE)
-head(sub_)
+#head(sub_)
 ```
 
+* Función que busca capitalizar los nombres de los barrios
 
 ```{r}
 Caps <- function(x) {
-
   s <- strsplit(x, " ")[[1]]
-
   paste(toupper(substring(s, 1,1)), substring(s, 2),
-
         sep="", collapse=" ")
-
 }
-
 
 sub_$barrio_2 <- sapply(sub_$barrio_2, Caps)
 #head(sub_)
 ```
+
+
+* Debido a inconsistenias entre los nombres de los barrios de la data de poligonos y los nombres de los barrios de la Encuesta de Calidad de Vida, se procede a realizar reemplazos manuales
+
 
 
 ```{r}
@@ -485,37 +650,117 @@ sub_$barrio_2[sub_$barrio_2 == "Carlos E Restrepo"] <- "Carlos E. Restrepo"
 sub_$barrio_2[sub_$barrio_2 == "Ã¡rea De ExpansiÃ³n BelÃ©n RincÃ³n"] <- "Ãrea de ExpansiÃ³n BelÃ©n RincÃ³n"
 ```
 
+* Se unen los dataframe de barrios_med en donde se encuentra los poligonos de los barrios de Medellín con su respectivo cluster
 
 ```{r}
 library(dplyr)
  
 #  union two dataframes  without duplicates
 nom_bar <- merge(barrios_med, sub_[!duplicated(sub_$barrio_2), ], by.x="NOMBRE", by.y="barrio_2",  all.x = TRUE)
-names(nom_bar)
+#names(nom_bar)
 
 ```
 
 
 
 ```{r}
-nombres <- data.frame(nom_bar$NOMBRE)
-print(sum(is.na(nom_bar$cluster)))
+#nombres <- data.frame(nom_bar$NOMBRE)
+#print(sum(is.na(nom_bar$cluster)))
 ```
 
 
 
-
+* Se procede a dibujar el mapa de Medellín señalando cada uno de los barrios a que cluster pertenece
 
 ```{r}
 library(leaflet)
 m <-leaflet(nom_bar)
 #factpal <- colorFactor(topo.colors(4), nom_bar$cluster)
-factpal <- colorFactor(palette = c("blue", "yellow", "green", "red","purple"), levels = c("1", "2", "3", "4", "5"))
+factpal <- colorFactor(palette = c("blue", "yellow", "green", "red","purple", "black", "darkgreen"), levels = c("1", "2", "3", "4", "5", "6", "7"))
 m <- addPolygons(m,popup=nombres_barrios, color=~factpal(cluster))
 m <- addTiles(m)
 m
 ```
 
 
+
+Espacialmente se evidencia que para la dimensión Movilidad Vial y Espacio Público, los grupos se distribuyen en el mapa sectorizado en la mayoría de los casos.
+
+**Grupo 1**
+
+Caracterizado porque son barrios que mayormente se ubican en la periferia de la ciudad y con aceptable transporte público.
+
+Algunos barrios de este grupo:
+
+```{r}
+head(df_member2[df_member2$cluster == 1,]$barrio_2)
+```
+
+
+
+**Grupo 2**
+
+Es el grupo de barrios mas grande, caracterizado principalmente por ser barrios de estrato 1, 2, 3 y por tener buena cobertura y calidad del transporte público
+
+Algunos barrios de este grupo:
+
+```{r}
+head(df_member2[df_member2$cluster == 2,]$barrio_2)
+```
+
+**Grupo 3**
+
+Es un grupo caracterizado principalmente por comprender barrios de estratos altos, dónde en promedio hay aproximadamente un carro por hogar y con buen transporte público y malla vial.
+
+Algunos barrios de este grupo:
+
+```{r}
+head(df_member2[df_member2$cluster == 3,]$barrio_2)
+```
+
+**Grupo 4**
+
+Caracterizado principalmente por contener barrios ubicados geograficamente al centro de la ciudad, con buena malla vial y buena cobertura y calidad de transporte público.
+
+Algunos barrios de este grupo:
+
+```{r}
+head(df_member2[df_member2$cluster == 4,]$barrio_2)
+```
+
+**Grupo 5**
+
+Son barrios que tienen mala cobertura del transporte publico y que en sus hogares no tienen automovil.
+
+
+Algunos barrios de este grupo:
+
+```{r}
+head(df_member2[df_member2$cluster == 5,]$barrio_2)
+```
+
+**Grupo 6**
+
+Es un barrio donde en sus hogares no tienen automovil y moto y que tienen muy mala infraestructura vial.
+
+Algunos barrios de este grupo:
+
+```{r}
+head(df_member2[df_member2$cluster == 6,]$barrio_2)
+```
+
+**Grupo 7**
+
+Son barrios donde el estado de la infraestructura vial es mala. Ubicados generalmente cerca de los límites de la ciudad.
+
+Algunos barrios de este grupo:
+
+```{r}
+head(df_member2[df_member2$cluster == 7,]$barrio_2)
+```
+
+
+
+Referencias [1] Encuesta calidad de vida. http://medata.gov.co/dataset/encuesta-calidad-de-vida [2] Barrio Vereda. https://geomedellin-m-medellin.opendata.arcgis.com/datasets/c844f0fd764f41b2a808d8747457de8a_4
 
 
