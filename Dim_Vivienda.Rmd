@@ -615,15 +615,18 @@ Conozcamos algunos barrios que pertenecen a cada uno de estos grupos
 
 ```{r}
 #df_member[order(df_member$cluster),]
-head(df_member[df_member$cluster == 1,]$barrio)
+print("Grupo 1")
+toString(df_member[df_member$cluster == 1,]$barrio)
 ```
 
 ```{r}
-head(df_member[df_member$cluster == 2,]$barrio)
+print("Grupo 2")
+toString(df_member[df_member$cluster == 2,]$barrio)
 ```
 
 ```{r}
-head(df_member[df_member$cluster == 3,]$barrio)
+print("Grupo 3")
+toString(df_member[df_member$cluster == 3,]$barrio)
 ```
 
 
