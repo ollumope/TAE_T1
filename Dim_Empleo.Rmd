@@ -8,7 +8,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 La dimensión de empleo hace parte del estudio de la encuesta de calidad de vida de la alcaldia de Medellín 2018 y se enfoca en las preguntas que aluden a temas como ocupación, salarios, horas trabajadas entre otras.
 
-```{r include=FALSE, warning=FALSE}
+```{r include=FALSE, warning=FALSE, message=FALSE}
 library(Utiltae)
 library(dplyr)
 library(lazyeval)
@@ -21,6 +21,14 @@ library(lattice)
 library(sqldf)
 library("factoextra")
 library(cluster)
+library(gridExtra)
+library(stringr)
+library(tidyr)
+library(rgdal)
+library(leaflet)
+library(DataCombine)
+library(GGally)
+library(plotly)
 ```
 
 ```{r echo=FALSE}
@@ -63,14 +71,13 @@ summary(ECV_EMPLEO_DEP)
 ### Detalle de las preguntas
 
 #### p_69: ¿En qué actividad ocupó la mayor parte del tiempo la semana pasada? [la predominante]
- Indicadores: Porcentaje de personas trabajando y Porcentaje de personas buscando trabajo
- &nbsp;
- Formulas: 
- &nbsp;
- CONTEO Trabajando / Totales Encuestados P_69
- &nbsp;
- CONTEO Buscando trabajo / Totales Encuestados P_69
- &nbsp;
+Indicadores: Porcentaje de personas trabajando y Porcentaje de personas buscando trabajo  
+
+Formulas:  
+CONTEO Trabajando / Totales Encuestados P_69  
+
+CONTEO Buscando trabajo / Totales Encuestados P_69  
+
 #### Valores de la pregunta:
   * -99	No responde
   * -88	No aplica
@@ -99,14 +106,17 @@ CONS_P69_2 <- sqldf("SELECT comuna,barrio, cast (SUM(totalRespuestaE) as real)/T
 ```
 
 #### p_81: ¿Cuántos meses (número) lleva trabajando en esa empresa o de forma independiente?
- Indicador: Promedio de meses trabajando x barrio
- Formula: 
-  Promedio(Meses)
+Indicador: Promedio de meses trabajando x barrio  
+
+Formula:  
+Promedio(Meses)  
+
 #### Valores de la pregunta:
-  * -99	No responde
-  * -98	No sabe
-  * -88	No aplica
- Nota: Se toman los valores mayores a cero para tener solo en cuenta las respuestas  de personas que    están trabajando y saben cuanto tiempo llevan trabajando.
+  * -99	No responde  
+  * -98	No sabe  
+  * -88	No aplica  
+
+Nota: Se toman los valores mayores a cero para tener solo en cuenta las respuestas  de personas que    están trabajando y saben cuanto tiempo llevan trabajando.
 
 ```{r include=FALSE}
 ECV_EMPLEO_P81 <- get_indicadores_ei(ECV_EMPLEO_DEP,'p_81')
@@ -118,9 +128,11 @@ CONS_P81 <- sqldf("SELECT comuna,barrio, AVG(p_81) as Ind_81
 ```
 
 #### p_85: A qué actividad específica se dedica principalmente la empresa o negocio en la que realiza su trabajo?
- Indicador: Porcentaje de personas que trabajan en sector extractivo (minería y agricultura)
- Formula: 
-  SUM(mineria + agricultura) / total encuestados
+Indicador: Porcentaje de personas que trabajan en sector extractivo (minería y agricultura)  
+
+Formula:   
+SUM(mineria + agricultura) / total encuestados  
+
 #### Valores de la pregunta:
   * -88	No aplica
   * 1	Agropecuaria, silvicultura y pesca
@@ -143,9 +155,11 @@ CONS_P85 <- sqldf("SELECT comuna,barrio, cast (SUM(totalRespuestaE) as real)/Tot
 ```
 
 #### p_86: En este trabajo es:
- Indicador: Porcentaje de personas que trabajan sin remuneración
- Formula: 
-  SUM(Trabajador familiar sin remuneracion + Trabajador sin remuneracion en empresas o negocios de otros hogares) / total encuestados
+Indicador: Porcentaje de personas que trabajan sin remuneración  
+
+Formula:   
+SUM(Trabajador familiar sin remuneracion + Trabajador sin remuneracion en empresas o negocios de otros hogares) / total encuestados  
+
 #### Valores de la pregunta:
   * -99	No responde
   * -98	No sabe
@@ -170,16 +184,19 @@ CONS_P86 <- sqldf("SELECT comuna,barrio, cast (SUM(totalRespuestaE) as real)/Tot
 ```
 
 #### p_87: Cuánto ganó el mes pasado en este empleo?
- Indicador: Promedio de salarios x barrio
- Formula: 
-  Promedio(Salarios)
+Indicador: Promedio de salarios x barrio  
+
+Formula:  
+Promedio(Salarios)  
+
 #### valores de la pregunta:
   * -99	No responde
   * -98	No sabe si recibía
   * -97	Si recibía pero no sabe el monto
   * -88	No aplica
   * 0	No recibía
- Nota: Se toman los valores mayores a cero para tener solo en cuenta las respuestas  de personas que    están trabajando y saben cuanto recibían.
+
+Nota: Se toman los valores mayores a cero para tener solo en cuenta las respuestas  de personas que    están trabajando y saben cuanto recibían.
 ```{r include=FALSE}
 ECV_EMPLEO_P87 <- get_indicadores_ei(ECV_EMPLEO_DEP,'p_87')
 
@@ -190,14 +207,17 @@ CONS_P87 <- sqldf("SELECT comuna,barrio, AVG(p_87) Ind_87
 ```
 
 #### p_94:Cuántas horas a la semana trabaja normalmente en ese trabajo- trabajo principal?
-Indicador: Promedio de horas trabajadas x barrio
-Formula: 
-  Promedio(Horas)
+Indicador: Promedio de horas trabajadas x barrio  
+
+Formula:   
+Promedio(Horas)  
+
 #### Valores de la pregunta:
   * -99	No responde
   * -98	No sabe
   * -88	No aplica
- Nota: Se toman los valores mayores a cero para tener solo en cuenta las respuestas  de personas que    están trabajando y saben cuantas horas.
+
+Nota: Se toman los valores mayores a cero para tener solo en cuenta las respuestas  de personas que    están trabajando y saben cuantas horas.
 ```{r include=FALSE}
 ECV_EMPLEO_P94 <- get_indicadores_ei(ECV_EMPLEO_DEP,'p_94')
 
@@ -208,12 +228,15 @@ CONS_P94 <- sqldf("SELECT comuna,barrio, AVG(p_94) Ind_94
 ```
 
 #### p_95_1:¿Cuántos Trabajos?
-Indicador: Promedio de trabajos por persona x barrio
-Formula: 
-  Promedio(trabajos)
+Indicador: Promedio de trabajos por persona x barrio  
+
+Formula:   
+Promedio(trabajos)  
+
 #### Valores de la pregunta:
   * -88	No aplica
- Nota: Se toman los valores mayores a cero para tener solo en cuenta las respuestas  de personas que    están trabajando.
+
+Nota: Se toman los valores mayores a cero para tener solo en cuenta las respuestas  de personas que    están trabajando.
 ```{r include=FALSE}
 ECV_EMPLEO_P95_1 <- get_indicadores_ei(ECV_EMPLEO_DEP,'p_95_1')
 
@@ -224,9 +247,11 @@ CONS_P95_1 <- sqldf("SELECT comuna,barrio, AVG(p_95_1) Ind_95_1
 ```
 
 #### p_100:¿Desea cambiar el trabajo que tiene actualmente?
-Indicador: Porcentaje de personas que si quiere cambiar de empleo
-Formula: 
-  SUM(SI/(SI+NO))
+Indicador: Porcentaje de personas que si quiere cambiar de empleo  
+
+Formula:   
+SUM(SI/(SI+NO))  
+
 #### Valores de la pregunta:
   * -98:	No sabe
   * -88:	No aplica
@@ -250,9 +275,11 @@ CONS_P100 <- sqldf("SELECT si.comuna as comuna ,si.barrio as barrio, CAST(TotalS
 ```
 
 #### p_101:¿Por qué motivos principalmente desea cambiar de trabajo o empleo?
-Indicador: Porcentaje de personas que quiere cambiar de empleo para mejorar sus ingresos
-Formula: 
-  SUM(SI/(SI+NO))
+Indicador: Porcentaje de personas que quiere cambiar de empleo para mejorar sus ingresos.
+
+Formula:  
+SUM(SI/(SI+NO))  
+
 #### Valores de la pregunta:
   * -99	No responde
   * -98	No sabe
@@ -292,7 +319,9 @@ ECV_EMPLEO_F <- merge(x=ECV_EMPLEO_F,y=CONS_P101,by = c("comuna","barrio"))
 
 
 ```
+
 ### Resumen de los indicadores calculados
+
 ```{r echo=FALSE}
 summary(ECV_EMPLEO_F)
 ```
@@ -329,6 +358,7 @@ ECV_EMPLEO_SCALE <- scale(ECV_EMPLEO_SCALE)
 ```{r echo=FALSE}
 fviz_nbclust(ECV_EMPLEO_SCALE, kmeans, method = "wss") + labs(title= "Número óptimo de Clusters por codo") + xlab("Número de Cluster (K)") + ylab("Suma error cuadratico medio")
 ```
+
 #### De acuerdo a la gráfica donde se empieza a estabilizar la pendiente es en el k = 5
 
 #### Método de la siluetta para determinar el k óptimo
@@ -336,6 +366,7 @@ fviz_nbclust(ECV_EMPLEO_SCALE, kmeans, method = "wss") + labs(title= "Número ó
 ```{r echo=FALSE}
 fviz_nbclust(ECV_EMPLEO_SCALE, kmeans, method = "silhouette")+ labs(title= "Número óptimo de Clusters por silueta") + xlab("Número de Cluster (K)") + ylab("Ancho promedio de la silueta")
 ```
+
 #### De acuerdo a la gráfica donde se da el cambio de pendiente más significativo es en el k = 2
 
 #### Se realizó una aplicación de Kmeans a con diferentes K
@@ -363,7 +394,7 @@ df_member7 <- cbind(ECV_EMPLEO_F, cluster = kmeans_model7$cluster)
 #head(df_member2)
 ```
 
-####Visualización de los grupos para  K = 2,3,4,5,6,7
+### Visualización de los grupos para  K = 2,3,4,5,6,7
 
 ```{r echo=FALSE}
 K2 = fviz_cluster(kmeans_model2, data = ECV_EMPLEO_SCALE, geom = "point") + ggtitle("k = 2")
@@ -372,11 +403,12 @@ K4 = fviz_cluster(kmeans_model4, data = ECV_EMPLEO_SCALE, geom = "point") + ggti
 K5 = fviz_cluster(kmeans_model5, data = ECV_EMPLEO_SCALE, geom = "point") + ggtitle("k = 5")
 K6 = fviz_cluster(kmeans_model6, data = ECV_EMPLEO_SCALE, geom = "point") + ggtitle("k = 6")
 K7 = fviz_cluster(kmeans_model7, data = ECV_EMPLEO_SCALE, geom = "point") + ggtitle("k = 7")
-library(gridExtra)
 grid.arrange(K2, K3, K4, K5,K6,K7, nrow = 3)
 
 ```
+
 #### Se realiza un analisis de la diferencia de errores
+
 ```{r echo=FALSE}
 ss <- fviz_nbclust(ECV_EMPLEO_SCALE,kmeans,nstart=50,method = "wss",nboot = 50)
 plot(2:10, diff(ss$data$y),type = "h", main = "Diferencia de Errores", xlab = "k", ylab = "Diferencia")
@@ -384,12 +416,15 @@ plot(2:10, diff(ss$data$y),type = "h", main = "Diferencia de Errores", xlab = "k
 ```
 
 #### Se valida la silueta para el K = 5
+
 ```{r echo=FALSE}
 sil5 <- silhouette(kmeans_model5$cluster, dist(ECV_EMPLEO_SCALE))
 s5 <- fviz_silhouette(sil5) 
 grid.arrange(s5) 
 ```
+
 #### Se realiza el calculo del ajuste para los distintos valores de K
+
 ```{r echo=FALSE}
 Ks <- c('K2','K3','K4','K5','K6','K7')
 Ajuste <- c(kmeans_model2$betweenss / kmeans_model2$totss,
@@ -407,6 +442,18 @@ ajuste.data
 ```{r echo=FALSE}
 fviz_cluster(kmeans_model5, data = ECV_EMPLEO_SCALE, geom = "point") + ggtitle("k = 5")
 ```
+```{r echo=FALSE}
+ECV_EMPLEO_KMEANS <- kmeans_model5$centers
+ECV_EMPLEO_KMEANS <- data.frame(ECV_EMPLEO_KMEANS)
+ECV_EMPLEO_KMEANS %>% tibble::rownames_to_column("cluster") -> ECV_EMPLEO_KMEANS
+ECV_EMPLEO_KMEANS$cluster <- as.factor(ECV_EMPLEO_KMEANS$cluster)
+ 
+summary_cluster_means <- ggparcoord(data = ECV_EMPLEO_KMEANS, columns = c(2:8), groupColumn = "cluster", scale = "globalminmax", showPoints = TRUE, alphaLines = 0.5) + labs(x = "Indicador / Preguntas", y = "Medias", title = "Análisis General de los cluster de acuerdo a las preguntas de la dimensión") + theme(plot.title = element_text(size=12), axis.text=element_text(size=8))
+ggplotly(summary_cluster_means)
+
+```
+
+Como se puede apreciar en la el gráfico, los indicadores que mas diferenciaron los grupos fueron el 69_2 (Porcentaje de personas buscando trabajo) y 101 (Porcentaje de personas que quiere cambiar de empleo para mejorar sus ingresos)
 
 ### Análisis para cada uno de los grupos
 
@@ -418,7 +465,7 @@ summary(df_member5[df_member5$cluster == 1,])
 
 *Barrios Grupo 1*
 
-```{r}
+```{r echo=FALSE}
 toString(df_member5$barrio[df_member5$cluster == 1])
 ```
 
@@ -432,7 +479,7 @@ summary(df_member5[df_member5$cluster == 2,])
 
 *Barrios Grupo 2*
 
-```{r}
+```{r echo=FALSE}
 toString(df_member5$barrio[df_member5$cluster == 2])
 ```
 
@@ -446,7 +493,7 @@ summary(df_member5[df_member5$cluster == 3,])
 
 *Barrios Grupo 3*
 
-```{r}
+```{r echo=FALSE}
 toString(df_member5$barrio[df_member5$cluster == 3])
 ```
 
@@ -460,7 +507,7 @@ summary(df_member5[df_member5$cluster == 4,])
 
 *Barrios Grupo 4*
 
-```{r}
+```{r echo=FALSE}
 toString(df_member5$barrio[df_member5$cluster == 4])
 ```
 
@@ -474,7 +521,7 @@ summary(df_member5[df_member5$cluster == 5,])
 
 *Barrios Grupo 5*
 
-```{r}
+```{r echo=FALSE}
 toString(df_member5$barrio[df_member5$cluster == 5])
 ```
 
@@ -483,15 +530,10 @@ En el grupo 5 tenemos 53 barrios en los cuales la gente que trabaja lleva trabaj
 #### Mapa de barrios agrupados
 
 ```{r echo=FALSE}
-library(stringr)
-library(tidyr)
-
 df_member <- separate(df_member5, 'barrio', paste("barrio", 1:2, sep="_"), sep="/", extra="drop")
 ```
 
-```{r echo=FALSE}
-library(rgdal)
-library(leaflet)
+```{r include=FALSE, warning=FALSE, message=FALSE}
 barrios_med <- readOGR("Barrio_Vereda/Barrio_Vereda.shp",layer="Barrio_Vereda")
 nombres_barrios <- iconv(barrios_med@data$NOMBRE,"UTF-8","ISO_8859-1")
 
@@ -512,7 +554,7 @@ sub_$barrio_2 <- tolower(sub_$barrio_2)
 
 ```{r echo=FALSE}
 # Create replacements data frame
-library(DataCombine)
+
 Replaces <- data.frame(from = c("º ", "ú", "ó", "í", "é", "á", "Á", "ñ"), to = c("o.", "Ãº", "Ã³", "Ã", "Ã©", "Ã¡", "Ã\u0081", "Ã±"))
 sub_ <- FindReplace(data = sub_, Var = "barrio_2", replaceData = Replaces,
                      from = "from", to = "to", exact = FALSE)
@@ -604,9 +646,3 @@ m <- addTiles(m)
 m
 ```
 
-Donde:
-Grupo 1 Azul
-Grupo 2 Amarillo
-Grupo 3 Rojo
-GRupo 4 Verde
-Grupo 5 Morado
