@@ -41,7 +41,7 @@ library(rgdal)
 # Preparación del DataFrame de Trabajo.
 
 # Carga de información de encuestas
-ECV <- read.csv("~/Documents/GitHub/TAE_T1/dataSet/encuesta_calidad_vida.csv", sep=";")
+ECV <- read.csv("~/Documents/GitHub/TAE_T1/dataSet/encuesta_calidad_vida.csv", sep=";", fileEncoding = "UTF-8")
 # Cambio de la cabecera de dataFrame por nombras mas legibles.
 ECV <- setNames(ECV, set_dataSet_names(names(ECV)))
 #Selecion de las caracteristicas y preguntas a analizar en el ejercicio.
@@ -984,6 +984,7 @@ m
 ```
 
 
+#### Conclusión del Cluster.
 
-
+Después de analízar el cluster y teniendo en cuenta el proposito general del estudio de la alcaldia de Medellín, podemos concluir que según la distribución del cluster, Se evidencia que los grupos no poseen una alta variación a diferencia de un grupo conformado por 3 barrios ubicados en San Cristobal los cuales estan ubicados en zona rural, un caso puntual con oportunidades para solucionar esta situación. De resto las variables utilizadas para medir la educación en los barrios tienen un comportamiento igual. Las diferencias que definen los grupos de este estudio son el tiempo que se toma una persona en desplazarse a el sitio de estudio y el porcentaje de personas con educación superior. Para identificar el poder de estas respuestas es necesario realizar un estudio adicional si dichas personas hacen parte de una población la cual esta cursando estudio superiores y de la misma forma si las personas que van realizando estudios superiores migran a otros barrios de mayor nivel, esto podria explicar la potencia de estas dos variables. De otra forma podemos concluir que segun la dimensión educación Medellín posee calidad de vida para sus habitantes, los grupos muestra que no se evidencia mayor diferencia entre sus grupos.
 
